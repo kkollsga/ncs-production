@@ -3,1224 +3,2049 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Interactive NPD Production Dashboard</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Solitaire">
+    <title>Field Production Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <style>
-        /* Base styles */
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; overflow-x: hidden; }
-        /* Sticky header for the table */
-        #dataTable thead th { position: sticky; top: 0; background-color: #f9fafb; z-index: 10; font-size: 0.75rem; }
-        /* Alternating row color for the table */
-        #dataTable tbody tr:nth-child(even) { background-color: #f3f4f6; }
-        /* Table container */
-        .table-container { max-height: 60vh; overflow: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; }
-        /* Drop zone styling */
-        #dropZone { border: 2px dashed #cbd5e1; padding: 2rem; text-align: center; cursor: default; transition: background-color 0.2s ease, border-color 0.2s ease; border-radius: 0.375rem; background-color: #f9fafb; }
-        #dropZone.dragover { background-color: #e0f2fe; border-color: #38bdf8; }
-        /* Chart container */
-        .chart-container, .small-chart-container { position: relative; border: 1px solid #e5e7eb; border-radius: 0.375rem; background-color: #fff; padding: 1rem; margin-top: 1rem; }
-        .chart-container { height: 50vh; }
-        .small-chart-container { height: 30vh; }
-        /* Expand button styling */
-        .expand-button {
-            position: absolute; top: 0.5rem; right: 0.5rem; z-index: 20;
-            padding: 0.25rem; background-color: rgba(243, 244, 246, 0.7);
-            border: 1px solid rgba(209, 213, 219, 0.7); border-radius: 0.375rem; cursor: pointer;
-            transition: background-color 0.2s;
+        .drag-over {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
         }
-        .expand-button:hover { background-color: rgba(229, 231, 235, 0.9); }
-        .expand-button svg { width: 1rem; height: 1rem; color: #4b5563; }
-        /* Chart Modal Styling */
-        #chartModal.hidden { display: none !important; }
-        #chartModal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; }
-        #modalOverlayElem { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75); z-index: 100; } /* Updated ID & fixed */
-        #modalContent { position: relative; background-color: white; border-radius: 0.5rem; padding: 2rem; width: 90vw; height: 85vh; display: flex; flex-direction: column; z-index: 102; }
-        #modalChartContainer { flex-grow: 1; position: relative; }
-        #closeModalButton { position: absolute; top: 0.5rem; right: 0.75rem; background: none; border: none; font-size: 2rem; color: #6b7280; cursor: pointer; line-height: 1; z-index: 103; }
-        #closeModalButton:hover { color: #1f2937; }
+        
+        .company-pill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .company-pill .remove-btn {
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .company-pill .remove-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        .dropdown-container {
+            position: relative;
+        }
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .dropdown-item:hover {
+            background: #f9fafb;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .search-input {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 16px;
+        }
+        .toggle-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .toggle-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .edit-button {
+            background: transparent;
+            color: #3b82f6;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            width: 32px;
+            height: 32px;
+        }
+        .edit-button:hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .chart-title-container {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .chart-main-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .chart-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+        .chart-container {
+            position: relative;
+            transition: height 0.3s ease;
+        }
 
-        /* KPI Card Styling */
-        .kpi-card { background-color: #fff; padding: 1.25rem; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; display: flex; flex-direction: column; }
-        .kpi-title { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; font-weight: 500; }
-        .kpi-value { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
-        .kpi-subvalue { font-size: 0.875rem; color: #4b5563; }
-        .kpi-unit { font-size: 0.75rem; color: #4b5563; margin-left: 0.25rem; }
-        /* Filter panel styling */
-        #filterPanel { transition: transform 0.3s ease-in-out; }
-        .filter-section label { display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500; color: #374151; }
-        .filter-section select, .filter-section input[type="month"], #diveInFieldSelect { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; background-color: #fff; }
-        .filter-section select[multiple] { height: 15rem; }
-        /* Dive-in section styling */
-        #fieldDiveInArea { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1.5rem; margin-top: 1.5rem; background-color: #f9fafb; }
-        #diveInHeader { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem; }
-        #diveInHeader h2 { margin-bottom: 0; }
-        #diveInHeader .select-container { min-width: 200px; max-width: 100%; }
-        /* Burger menu button */
-        #burgerButton { z-index: 50; }
-        /* Overlay for closing menu */
-        #filterOverlay { transition: opacity 0.3s ease-in-out; }
-        /* Helper class for hidden */
-        .hidden { display: none; }
-        /* Color coding for fields */
-        .field-oil { background-color: #e0f2fe; color: #0284c7; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-weight: 500; }
-        .field-gas { background-color: #ffe4e6; color: #e11d48; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-weight: 500; }
-        /* Clickable field name styling */
-        .clickable-field-name { cursor: pointer; }
-        .clickable-field-name:hover { text-decoration: underline; }
-        /* Preset button styling */
-        .preset-button, .toggle-button { padding: 0.25rem 0.75rem; border: 1px solid #d1d5db; border-radius: 9999px; font-size: 0.75rem; background-color: #fff; color: #374151; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
-        .preset-button:hover, .toggle-button:hover { background-color: #f3f4f6; }
-        .preset-button.active, .toggle-button.active { background-color: #3b82f6; color: #fff; border-color: #3b82f6; }
+        .chart-toggle-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-toggle-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .chart-toggle-btn i {
+            color: #6b7280;
+            font-size: 14px;
+            transition: transform 0.3s ease;
+            transform: rotate(0deg);
+        }
+
+        /* More specific selectors for Font Awesome SVGs */
+        .chart-expanded .chart-toggle-btn i,
+        .chart-expanded .chart-toggle-btn svg {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Also target the SVG path if needed */
+        .chart-expanded .chart-toggle-btn i svg,
+        .chart-expanded .chart-toggle-btn svg {
+            transform: rotate(180deg);
+        }
+
+        .chart-canvas-container {
+            height: 384px; /* 24rem = 384px */
+            transition: height 0.3s ease;
+        }
+
+        .chart-expanded .chart-canvas-container {
+            height: 868px; /* Double the height */
+        }
     </style>
 </head>
-<body class="bg-gray-100 p-0 md:p-4 font-sans relative">
-
-    <div id="filterOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
-    <div id="filterPanel" class="fixed inset-y-0 left-0 w-72 md:w-80 bg-white p-6 shadow-lg z-50 transform -translate-x-full">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-lg font-semibold">Main Filters</h2>
-            <button id="closeFilterButton" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Field Production Analysis</h1>
+        
+        <!-- File Upload Section -->
+        <div id="uploadSection" class="space-y-6">
+            <!-- Single Upload Area -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Upload CSV Data Files</h2>
+                
+                <!-- Expected Files Pills -->
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <div id="productionPill" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border border-gray-300">
+                        <i class="fas fa-file-csv mr-1"></i>
+                        Production Data (field_production_monthly.csv)
+                    </div>
+                    <div id="licenseePill" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border border-gray-300">
+                        <i class="fas fa-file-csv mr-1"></i>
+                        Licensee Data (field_licensee_hst.csv)
+                    </div>
+                </div>
+                
+                <!-- Drop Zone -->
+                <div id="multiDropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors">
+                    <i class="fas fa-upload text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 text-lg mb-2">Drag and drop CSV files here or click to browse</p>
+                    <p class="text-gray-500 text-sm">Supports multiple file upload - drop both files at once</p>
+                    <input type="file" id="multiFileInput" accept=".csv" multiple class="hidden">
+                </div>
+                
+                <!-- Status Messages -->
+                <div id="uploadStatus" class="mt-4 space-y-2">
+                    <!-- Status messages will be inserted here -->
+                </div>
+            </div>
         </div>
-        <div class="space-y-6">
-            <div class="filter-section">
-                <label for="fieldFilter">Field(s) (for KPIs & Main Chart):</label>
-                <select id="fieldFilter" multiple> </select>
+        <!-- Analysis Section -->
+        <div id="analysisSection" class="hidden space-y-6">
+            <!-- Company Selection -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700">Select Companies</label>
+                    
+                    <!-- Selected Companies Display -->
+                    <div id="selectedCompaniesDisplay" class="min-h-[50px] p-3 border border-gray-300 rounded-lg bg-gray-50">
+                        <div id="selectedCompanies" class="flex flex-wrap items-center gap-2">
+                            <button id="toggleDropdown" class="toggle-button">
+                                <i class="fas fa-plus"></i>
+                                <span>Select Company</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Container -->
+                    <div id="dropdownContainer" class="dropdown-container hidden">
+                        <div id="dropdownMenu" class="dropdown-menu">
+                            <div class="search-input">
+                                <input 
+                                    type="text" 
+                                    id="companySearch" 
+                                    placeholder="Search companies..." 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+                            <div id="companyList"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="filter-section">
-                <label for="startDate">Start Date:</label>
-                <input type="month" id="startDate">
+
+            <!-- Controls -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="month" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="month" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="unitSelect" class="block text-sm font-medium text-gray-700 mb-2">Unit System</label>
+                        <select id="unitSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="si-monthly">SI - Monthly</option>
+                            <option value="si-daily">SI - Daily</option>
+                            <option value="barrels-daily">Barrels - Daily</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div class="filter-section">
-                <label for="endDate">End Date:</label>
-                <input type="month" id="endDate">
-            </div>
-            <div>
-                 <button id="resetFiltersButton" class="w-full px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm">Reset Filters</button>
+
+            <!-- Chart Sections -->
+            <div class="space-y-6">
+                <!-- Oil Equivalent Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 chart-container">
+                    <div id="oeChartTitleContainer" class="chart-title-container">
+                        <div id="oeChartTitle" class="chart-main-title">Oil Equivalent Production by Field (KOE)</div>
+                        <div id="oeChartSubtitle" class="chart-subtitle"></div>
+                    </div>
+                    <button class="chart-toggle-btn" onclick="window.chartManager.toggleChart('oe')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="chart-canvas-container">
+                        <canvas id="oeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Oil Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 chart-container">
+                    <div id="oilChartTitleContainer" class="chart-title-container">
+                        <div id="oilChartTitle" class="chart-main-title">Oil Production by Field (KCM)</div>
+                        <div id="oilChartSubtitle" class="chart-subtitle"></div>
+                    </div>
+                    <button class="chart-toggle-btn" onclick="window.chartManager.toggleChart('prfPrdOilNetMillSm3')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="chart-canvas-container">
+                        <canvas id="oilChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gas Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 chart-container">
+                    <div id="gasChartTitleContainer" class="chart-title-container">
+                        <div id="gasChartTitle" class="chart-main-title">Gas Production by Field (MCM)</div>
+                        <div id="gasChartSubtitle" class="chart-subtitle"></div>
+                    </div>
+                    <button class="chart-toggle-btn" onclick="window.chartManager.toggleChart('prfPrdGasNetBillSm3')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="chart-canvas-container">
+                        <canvas id="gasChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- NGL Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 chart-container">
+                    <div id="nglChartTitleContainer" class="chart-title-container">
+                        <div id="nglChartTitle" class="chart-main-title">NGL Production by Field (KCM)</div>
+                        <div id="nglChartSubtitle" class="chart-subtitle"></div>
+                    </div>
+                    <button class="chart-toggle-btn" onclick="window.chartManager.toggleChart('prfPrdNGLNetMillSm3')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="chart-canvas-container">
+                        <canvas id="nglChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Condensate Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 chart-container">
+                    <div id="condensateChartTitleContainer" class="chart-title-container">
+                        <div id="condensateChartTitle" class="chart-main-title">Condensate Production by Field (KCM)</div>
+                        <div id="condensateChartSubtitle" class="chart-subtitle"></div>
+                    </div>
+                    <button class="chart-toggle-btn" onclick="window.chartManager.toggleChart('prfPrdCondensateNetMillSm3')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="chart-canvas-container">
+                        <canvas id="condensateChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="container mx-auto bg-white p-4 md:p-6 rounded-lg shadow-md min-h-screen">
-         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Advanced Norwegian Field Production Dashboard</h1>
-            <button id="burgerButton" class="p-2 rounded hover:bg-gray-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                </svg>
-            </button>
-        </div>
-
-        <div id="status" class="mb-4 p-3 bg-blue-100 text-blue-800 rounded text-sm hidden">Loading data...</div>
-        <div id="error" class="hidden mb-4 p-3 bg-red-100 text-red-800 rounded text-sm">Error loading data.</div>
-
-        <div id="dropZone" class="mt-4 rounded-md">
-             <p class="text-gray-600 font-medium mb-2">Load Production Data</p>
-             <p class="text-sm text-gray-500 mb-4">Drag & drop the CSV file here, or browse to upload.</p>
-             <div class="flex justify-center items-center gap-4">
-                 <button id="browseButton" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm">
-                     Browse Files
-                 </button>
-                 <span class="text-sm text-gray-500">or</span>
-                 <a id="csvDownloadLink" href="#" target="_blank" class="text-sm text-blue-600 hover:underline">
-                     Download Source CSV
-                 </a>
-             </div>
-             <input type="file" id="fileInput" accept=".csv" class="hidden">
-        </div>
-
-
-        <div id="dashboardContent" class="hidden">
-            <div class="flex justify-between items-center mt-6 mb-3">
-                 <h2 class="text-lg font-semibold text-gray-700">Analysis for: <span id="kpiReferenceMonthSpan" class="text-blue-600"></span></h2>
-                 <div class="flex gap-2">
-                     <button id="prevKpiMonth" class="px-2 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-xs disabled:opacity-50 disabled:cursor-not-allowed">&lt; Prev</button>
-                     <button id="nextKpiMonth" class="px-2 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-xs disabled:opacity-50 disabled:cursor-not-allowed">Next &gt;</button>
-                 </div>
-             </div>
-            <div id="kpiContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <div class="kpi-card animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div><div class="h-6 bg-gray-300 rounded w-1/2"></div></div>
-                <div class="kpi-card animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div><div class="h-10 bg-gray-300 rounded w-full"></div></div>
-                <div class="kpi-card animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div><div class="h-10 bg-gray-300 rounded w-full"></div></div>
-            </div>
-
-            <h2 class="text-lg font-semibold text-gray-700 mb-3">Production Trend (Selected Period)</h2>
-             <div class="flex flex-wrap gap-x-2 gap-y-2 items-center mb-3 text-sm">
-                <div class="font-medium mr-2">Range:</div>
-                <div id="datePresetButtons" class="flex flex-wrap gap-1">
-                    <button data-range="1y" class="preset-button">1Y</button>
-                    <button data-range="5y" class="preset-button">5Y</button>
-                    <button data-range="10y" class="preset-button">10Y</button>
-                    <button data-range="all" class="preset-button active">All</button>
-                </div>
-                <div class="flex items-center ml-auto pl-4">
-                     <input type="checkbox" id="summarizeYearlyCheckbox" class="mr-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                     <label for="summarizeYearlyCheckbox" class="text-xs text-gray-700">Summarize Yearly</label>
-                </div>
-            </div>
-            <div class="chart-container" id="mainChartContainer">
-                <button class="expand-button" data-chart-type="main" title="Expand Chart">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /> </svg>
-                 </button>
-                <canvas id="productionChart"></canvas>
-            </div>
-
-            <div id="fieldDiveInArea" class="hidden">
-                 <div id="diveInHeader">
-                     <h2 class="text-lg font-semibold text-gray-700">Field Analysis:</h2>
-                     <div class="select-container">
-                         <label for="diveInFieldSelect" class="sr-only">Select Field for Analysis:</label>
-                         <select id="diveInFieldSelect">
-                             <option value="">-- Select Field --</option>
-                         </select>
-                     </div>
-                 </div>
-                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 mt-4">
-                     <div class="kpi-card">
-                         <div class="kpi-title">Latest Production (<span id="diveInLatestMonth"></span>)</div>
-                         <div id="diveInLatestProdOE" class="kpi-value">-<span class="kpi-unit">OE</span></div>
-                         <div id="diveInLatestProdOil" class="kpi-subvalue">-<span class="kpi-unit">Oil</span></div>
-                         <div id="diveInLatestProdGas" class="kpi-subvalue">-<span class="kpi-unit">Gas</span></div>
-                     </div>
-                     <div class="kpi-card">
-                         <div class="kpi-title">YoY Change (Latest Month OE)</div>
-                         <div id="diveInYoYChange" class="kpi-value">-</div>
-                     </div>
-                     <div class="kpi-card">
-                         <div class="kpi-title">Total in Selected Period (OE)</div>
-                         <div id="diveInTotalProd" class="kpi-value">-<span class="kpi-unit">Mill Sm³</span></div>
-                     </div>
-                      <div class="kpi-card">
-                         <div class="kpi-title">Total Last Calendar Year (OE)</div>
-                         <div id="diveInTotalLastYear" class="kpi-value">-<span class="kpi-unit">Mill Sm³</span></div>
-                     </div>
-                 </div>
-                 <div class="flex flex-wrap justify-between items-center mt-4 mb-2 gap-y-2">
-                     <h3 id="diveInChartTitle" class="text-md font-semibold text-gray-600">Last 24 Months Production</h3>
-                     <div class="flex gap-x-4 gap-y-1 items-center">
-                         <div id="diveInChartToggle" class="flex gap-1">
-                             <button data-mode="monthly" class="toggle-button active">Last 24 Months</button>
-                             <button data-mode="yearly" class="toggle-button">Yearly</button>
-                         </div>
-                         <div class="flex items-center">
-                             <input type="checkbox" id="showDailyToggle" class="mr-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                             <label for="showDailyToggle" class="text-xs text-gray-700">Show Daily Avg.</label>
-                         </div>
-                     </div>
-                 </div>
-                 <div class="small-chart-container" id="diveInChartContainer">
-                      <button class="expand-button" data-chart-type="dive" title="Expand Chart">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /> </svg>
-                      </button>
-                    <canvas id="yearlyFieldChart"></canvas>
-                 </div>
-            </div>
-
-
-             <div class="mt-6 text-center">
-                <button id="toggleTableButton" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm">
-                    Show Raw Data Table
-                </button>
-            </div>
-        </div>
-
-        <div id="tableWrapper" class="table-container mt-4 hidden">
-            <table id="dataTable" class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50"></thead>
-                <tbody class="bg-white divide-y divide-gray-200"></tbody>
-            </table>
-        </div>
-    </div>
-
-     <div id="chartModal" class="hidden" style="display: none;">
-         <div id="modalOverlayElem" class="fixed inset-0 bg-black bg-opacity-75 z-[100]"></div>
-         <div id="modalContent" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 md:p-8 shadow-xl z-[101] w-[95vw] h-[90vh] flex flex-col">
-             <button id="closeModalButton" title="Close" class="absolute top-2 right-3 text-gray-500 hover:text-gray-800 text-3xl leading-none z-[102]">&times;</button>
-             <div id="modalChartContainer" class="flex-grow relative">
-                 <canvas id="modalChartCanvas"></canvas>
-             </div>
-         </div>
-     </div>
-
 
     <script>
-        // --- Global State & Config ---
-        const csvUrl = 'https://factpages.sodir.no/public?/Factpages/external/tableview/field_production_monthly&rs:Command=Render&rc:Toolbar=false&rc:Parameters=f&IpAddress=not_used&CultureCode=nb-no&rs:Format=CSV&Top100=false';
-        let productionChartInstance = null;
-        let yearlyFieldChartInstance = null;
-        let modalChartInstance = null;
-        let mainChartConfig = {};
-        let diveInChartConfig = {};
-        let rawData = { headers: [], rows: [], fieldData: {} };
-        let uniqueFields = [];
-        let processedDataCache = null;
-        let isFilterPanelOpen = false;
-        let summarizeYearly = false;
-        let fullDataStartDate = null;
-        let fullDataEndDate = null;
-        let kpiReferenceDateKey = null;
-        let currentSortedDateKeys = [];
-        let isTablePopulated = false;
-        let diveInChartMode = 'monthly';
-        let showDailyAverages = false;
-
-
-        // --- DOM References ---
-        // (Keep all DOM references from previous version)
-        const filterPanel = document.getElementById('filterPanel');
-        const filterOverlay = document.getElementById('filterOverlay');
-        const burgerButton = document.getElementById('burgerButton');
-        const closeFilterButton = document.getElementById('closeFilterButton');
-        const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error');
-        const dropZone = document.getElementById('dropZone');
-        const csvDownloadLink = document.getElementById('csvDownloadLink');
-        const browseButton = document.getElementById('browseButton');
-        const fileInput = document.getElementById('fileInput');
-        const fieldFilterSelect = document.getElementById('fieldFilter');
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
-        const resetFiltersButton = document.getElementById('resetFiltersButton');
-        const dashboardContent = document.getElementById('dashboardContent');
-        const kpiReferenceMonthSpan = document.getElementById('kpiReferenceMonthSpan');
-        const prevKpiMonthButton = document.getElementById('prevKpiMonth');
-        const nextKpiMonthButton = document.getElementById('nextKpiMonth');
-        const kpiContainer = document.getElementById('kpiContainer');
-        const datePresetButtonsContainer = document.getElementById('datePresetButtons');
-        const summarizeYearlyCheckbox = document.getElementById('summarizeYearlyCheckbox');
-        const mainChartContainer = document.getElementById('mainChartContainer');
-        const chartCanvas = document.getElementById('productionChart');
-        // Dive-In Area
-        const fieldDiveInArea = document.getElementById('fieldDiveInArea');
-        const diveInFieldSelect = document.getElementById('diveInFieldSelect');
-        const diveInLatestMonth = document.getElementById('diveInLatestMonth');
-        const diveInLatestProdOE = document.getElementById('diveInLatestProdOE');
-        const diveInLatestProdOil = document.getElementById('diveInLatestProdOil');
-        const diveInLatestProdGas = document.getElementById('diveInLatestProdGas');
-        const diveInYoYChange = document.getElementById('diveInYoYChange');
-        const diveInTotalProd = document.getElementById('diveInTotalProd');
-        const diveInTotalLastYear = document.getElementById('diveInTotalLastYear');
-        const diveInChartTitle = document.getElementById('diveInChartTitle');
-        const diveInChartToggleContainer = document.getElementById('diveInChartToggle');
-        const showDailyToggleCheckbox = document.getElementById('showDailyToggle');
-        const diveInChartContainer = document.getElementById('diveInChartContainer');
-        const yearlyFieldChartCanvas = document.getElementById('yearlyFieldChart');
-        // Table
-        const tableWrapper = document.getElementById('tableWrapper');
-        const tableHead = document.querySelector('#dataTable thead');
-        const tableBody = document.querySelector('#dataTable tbody');
-        const toggleTableButton = document.getElementById('toggleTableButton');
-        // Modal
-        const chartModal = document.getElementById('chartModal');
-        const modalOverlayElem = document.getElementById('modalOverlayElem'); // Use specific ID from HTML
-        const modalChartCanvas = document.getElementById('modalChartCanvas');
-        const closeModalButton = document.getElementById('closeModalButton');
-
-
-        // --- Date Formatting Helpers (using date-fns) ---
-        const { format: formatDate, parse: parseDate, addMonths, subMonths, subYears, startOfYear, endOfYear, isBefore, isAfter, isValid: isValidDate, eachMonthOfInterval, startOfMonth, getDaysInMonth, isLeapYear } = window.dateFns || {};
-        const formatDateYYYYMM = (date) => formatDate && isValidDate(date) ? formatDate(date, 'yyyy-MM') : '';
-        const parseDateYYYYMM = (str) => {
-            if (!str) return null;
-            const parseFn = parseDate || ((s, fmt, base) => new Date(parseInt(s.substring(0,4)), parseInt(s.substring(5,7)) - 1, 1));
-            const date = parseFn(str, 'yyyy-MM', new Date());
-            const validateFn = isValidDate || (d => !isNaN(d.getTime()));
-            return validateFn(date) ? date : null;
+        // ===================================================================
+        // CONFIGURATION AND CONSTANTS
+        // ===================================================================
+        
+        const CONFIG = {
+            CUBIC_METER_TO_BARRELS: 6.28981,
+            CUBIC_METER_TO_CUBIC_FEET: 35.3147,
+            RESOURCE_TYPES: [
+                { key: 'oe', chartId: 'oeChart', titleId: 'oeChartTitle', subtitleId: 'oeChartSubtitle', name: 'Oil Equivalent' },
+                { key: 'prfPrdOilNetMillSm3', chartId: 'oilChart', titleId: 'oilChartTitle', subtitleId: 'oilChartSubtitle', name: 'Oil' },
+                { key: 'prfPrdGasNetBillSm3', chartId: 'gasChart', titleId: 'gasChartTitle', subtitleId: 'gasChartSubtitle', name: 'Gas' },
+                { key: 'prfPrdNGLNetMillSm3', chartId: 'nglChart', titleId: 'nglChartTitle', subtitleId: 'nglChartSubtitle', name: 'NGL' },
+                { key: 'prfPrdCondensateNetMillSm3', chartId: 'condensateChart', titleId: 'condensateChartTitle', subtitleId: 'condensateChartSubtitle', name: 'Condensate' }
+            ]
         };
-        const getDaysInMonthFallback = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        const isLeapYearFallback = (date) => { const year = date.getFullYear(); return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0; };
-        const _getDaysInMonth = getDaysInMonth || getDaysInMonthFallback;
-        const _isLeapYear = isLeapYear || isLeapYearFallback;
-        if (!formatDate) { console.error("date-fns not loaded, using basic date functions."); }
 
+        // ===================================================================
+        // UTILITY FUNCTIONS
+        // ===================================================================
 
-        // --- UI Functions ---
-        function toggleFilterPanel(show) {
-            // (Keep implementation from previous version)
-            isFilterPanelOpen = show;
-            if (show) {
-                filterPanel.classList.remove('-translate-x-full');
-                filterOverlay.classList.remove('hidden');
-            } else {
-                filterPanel.classList.add('-translate-x-full');
-                filterOverlay.classList.add('hidden');
+        // Convert days in month for date calculations
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        // Parse year/month into Date object
+        function parseDate(year, month) {
+            const y = parseInt(year);
+            const m = parseInt(month) - 1; // JS months are 0-indexed
+            return new Date(y, m, 1);
+        }
+
+        // Format Date object to YYYY-MM string
+        function formatDate(date) {
+            return date.toISOString().slice(0, 7);
+        }
+
+        // Check if date falls within specified range
+        function isDateInRange(date, startDate, endDate) {
+            return date >= startDate && date <= endDate;
+        }
+
+        // Parse DD.MM.YYYY license date string to Date object
+        function parseLicenseDate(dateStr) {
+            if (!dateStr || dateStr === '') return null;
+            const parts = dateStr.split('.');
+            if (parts.length !== 3) return null;
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            return new Date(year, month - 1, day);
+        }
+
+        // Parse CSV text into array of objects
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+            return data;
+        }
+
+        // ===================================================================
+        // EVENT BUS CLASS - Inter-class communication system
+        // ===================================================================
+
+        class EventBus {
+            constructor() {
+                this.listeners = new Map();
+            }
+
+            // Subscribe to an event with callback function
+            on(event, callback) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, []);
+                }
+                this.listeners.get(event).push(callback);
+            }
+
+            // Publish event with optional data payload
+            emit(event, data = null) {
+                if (this.listeners.has(event)) {
+                    this.listeners.get(event).forEach(callback => callback(data));
+                }
+            }
+
+            // Remove event listener
+            off(event, callback) {
+                if (this.listeners.has(event)) {
+                    const callbacks = this.listeners.get(event);
+                    const index = callbacks.indexOf(callback);
+                    if (index > -1) {
+                        callbacks.splice(index, 1);
+                    }
+                }
             }
         }
 
-        // --- Data Processing ---
-        function parseRawData(csvText) {
-             // (Keep implementation from previous version)
-             const lines = csvText.trim().split('\n');
-             if (lines.length < 2) throw new Error('CSV needs header and data.');
-             const headers = lines[0].split(',').map(h => h.trim());
-             const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));
+        // ===================================================================
+        // DATA MANAGER CLASS - Handles data loading, filtering and preprocessing
+        // ===================================================================
 
-             const fieldIdx = headers.indexOf('prfInformationCarrier');
-             const yearIdx = headers.indexOf('prfYear');
-             const monthIdx = headers.indexOf('prfMonth');
-             const oilIdx = headers.indexOf('prfPrdOilNetMillSm3');
-             const gasIdx = headers.indexOf('prfPrdGasNetBillSm3');
-             const nglIdx = headers.indexOf('prfPrdNGLNetMillSm3');
-             const condIdx = headers.indexOf('prfPrdCondensateNetMillSm3');
-             const oeIdx = headers.indexOf('prfPrdOeNetMillSm3');
+        class DataManager {
+            constructor(eventBus) {
+                this.eventBus = eventBus;
+                this.rawData = {
+                    production: null,
+                    licensee: null
+                };
+                
+                // Preprocessed indices for O(1) lookups
+                this.indices = {
+                    licensesByField: new Map(),        // fieldId -> Map(companyId -> [licenses])
+                    productionByField: new Map(),      // fieldId -> Map(monthKey -> productionRow)
+                    fieldCompanies: new Map(),         // fieldId -> Set(companyIds)
+                    companyFields: new Map(),          // companyId -> Set(fieldIds)
+                    activeLicenses: new Map()          // licenseKey -> {isActive, activeMonths}
+                };
+                
+                // Metadata maps for quick lookups
+                this.metadata = {
+                    fieldNames: new Map(),             // fieldId -> fieldName
+                    fieldIds: new Map(),               // fieldName -> fieldId
+                    companyNames: new Map(),           // companyId -> companyName
+                    companyIds: new Map()              // companyName -> companyId
+                };
+                
+                this.currentDateRange = { startDate: null, endDate: null };
+                this.filteredProductionData = [];
+            }
 
-             if ([fieldIdx, yearIdx, monthIdx, oilIdx, gasIdx, oeIdx].includes(-1)) {
-                 throw new Error('One or more required columns (Field, Year, Month, Oil, Gas, OE) not found.');
-             }
+            // Load and validate production data
+            loadProductionData(data) {
+                this.rawData.production = data;
+                this.eventBus.emit('dataLoaded', { type: 'production' });
+            }
 
-             uniqueFields = [...new Set(rows.map(row => row[fieldIdx]))].sort();
-             rawData.headers = headers;
-             rawData.rows = rows;
-             rawData.fieldData = {};
+            // Load and validate licensee data
+            loadLicenseeData(data) {
+                this.rawData.licensee = data;
+                this.buildMetadataMaps();
+                this.eventBus.emit('dataLoaded', { type: 'licensee' });
+            }
 
-             let minDate = null; let maxDate = null;
-             rows.forEach(row => {
-                 const fieldName = row[fieldIdx];
-                 const year = parseInt(row[yearIdx], 10);
-                 const month = parseInt(row[monthIdx], 10);
-                 if (isNaN(year) || isNaN(month)) return;
-
-                 const dateKey = `${year}-${month.toString().padStart(2, '0')}`;
-                 const date = parseDateYYYYMM(dateKey);
-                 if (!isValidDate(date)) return;
-
-                 if (minDate === null || isBefore(date, minDate)) minDate = date;
-                 if (maxDate === null || isAfter(date, maxDate)) maxDate = date;
-
-                 if (!rawData.fieldData[fieldName]) rawData.fieldData[fieldName] = {};
-                 if (!rawData.fieldData[fieldName][dateKey]) {
-                     rawData.fieldData[fieldName][dateKey] = {
-                         year, month,
-                         oil: parseFloat(row[oilIdx]) || 0,
-                         gas: parseFloat(row[gasIdx]) || 0,
-                         ngl: parseFloat(row[nglIdx]) || 0,
-                         cond: parseFloat(row[condIdx]) || 0,
-                         oe: parseFloat(row[oeIdx]) || 0
-                     };
-                 }
-             });
-             fullDataStartDate = minDate;
-             fullDataEndDate = maxDate;
-             setInitialDateRange();
-             isTablePopulated = false;
-        }
-
-        function setInitialDateRange() {
-            // (Keep implementation from previous version)
-             if (fullDataStartDate && fullDataEndDate) {
-                 startDateInput.value = formatDateYYYYMM(fullDataStartDate);
-                 endDateInput.value = formatDateYYYYMM(fullDataEndDate);
-             }
-        }
-
-        function filterAndProcessData() {
-            // (Keep implementation from previous version)
-            const selectedFields = Array.from(fieldFilterSelect.selectedOptions).map(opt => opt.value);
-            const startDateStr = startDateInput.value;
-            const endDateStr = endDateInput.value;
-
-            if (!rawData || rawData.rows.length === 0) return null;
-
-            const startDate = startDateStr ? parseDateYYYYMM(startDateStr) : null;
-            const endDate = endDateStr ? parseDateYYYYMM(endDateStr) : null;
-
-            const fieldDataFiltered = {};
-            const monthlyTotals = {};
-            const dateKeysInPeriod = new Set();
-
-            Object.keys(rawData.fieldData).forEach(fieldName => {
-                if (selectedFields.length > 0 && !selectedFields.includes(fieldName)) return;
-
-                Object.keys(rawData.fieldData[fieldName]).forEach(dateKey => {
-                    const entry = rawData.fieldData[fieldName][dateKey];
-                    const entryDate = parseDateYYYYMM(dateKey);
-                    if (!isValidDate(entryDate)) return;
-
-                    const startDateMatch = !startDate || !isBefore(entryDate, startDate);
-                    const endDateMatch = !endDate || !isAfter(entryDate, endDate);
-
-                    if (startDateMatch && endDateMatch) {
-                        dateKeysInPeriod.add(dateKey);
-
-                        if (!monthlyTotals[dateKey]) {
-                            monthlyTotals[dateKey] = { year: entry.year, month: entry.month, oil: 0, gas: 0, ngl: 0, cond: 0, oe: 0 };
-                        }
-                        monthlyTotals[dateKey].oil += entry.oil;
-                        monthlyTotals[dateKey].gas += entry.gas;
-                        monthlyTotals[dateKey].ngl += entry.ngl;
-                        monthlyTotals[dateKey].cond += entry.cond;
-                        monthlyTotals[dateKey].oe += entry.oe;
-
-                        if (!fieldDataFiltered[fieldName]) fieldDataFiltered[fieldName] = {};
-                        fieldDataFiltered[fieldName][dateKey] = entry;
+            // Build field and company name mapping for quick lookups
+            buildMetadataMaps() {
+                this.rawData.licensee.forEach(row => {
+                    if (row.fldName && row.fldNpdidField) {
+                        this.metadata.fieldNames.set(row.fldNpdidField, row.fldName);
+                        this.metadata.fieldIds.set(row.fldName, row.fldNpdidField);
+                    }
+                    if (row.cmpNpdidCompany && row.cmpLongName) {
+                        this.metadata.companyNames.set(row.cmpNpdidCompany, row.cmpLongName);
+                        this.metadata.companyIds.set(row.cmpLongName, row.cmpNpdidCompany);
                     }
                 });
-            });
+            }
 
-            currentSortedDateKeys = Array.from(dateKeysInPeriod).sort();
-            const mainChartTimeSeries = { labels: [], oil: [], gas: [], oe: [] };
-            currentSortedDateKeys.forEach(key => {
-                mainChartTimeSeries.labels.push(key);
-                mainChartTimeSeries.oil.push(monthlyTotals[key]?.oil || 0);
-                mainChartTimeSeries.gas.push(monthlyTotals[key]?.gas || 0);
-                mainChartTimeSeries.oe.push(monthlyTotals[key]?.oe || 0);
-            });
+            // Filter production data by date range and cache result
+            updateDateRange(startDate, endDate) {
+                // Only update if date range actually changed
+                if (this.currentDateRange.startDate?.getTime() === startDate.getTime() && 
+                    this.currentDateRange.endDate?.getTime() === endDate.getTime()) {
+                    return false;
+                }
 
-            processedDataCache = {
-                filteredRowsForTable: [],
-                mainChartTimeSeries,
-                fieldData: fieldDataFiltered,
-                sortedDateKeys: currentSortedDateKeys
-            };
-            return processedDataCache;
+                this.currentDateRange = { startDate, endDate };
+                
+                // Filter production data once for the date range
+                this.filteredProductionData = this.rawData.production.filter(row => {
+                    const rowDate = parseDate(row.prfYear, row.prfMonth);
+                    return isDateInRange(rowDate, startDate, endDate);
+                });
+
+                // Rebuild indices for new date range
+                this.preprocessData();
+                return true;
+            }
+
+            // Build all preprocessed indices for fast O(1) lookups
+            preprocessData() {
+                this.buildLicenseIndex();
+                this.buildProductionIndex();
+                this.buildRelationshipMaps();
+                this.precomputeLicenseActivity();
+            }
+
+            // Build index of licenses by field and company for O(1) lookup
+            buildLicenseIndex() {
+                this.indices.licensesByField.clear();
+                
+                this.rawData.licensee.forEach(license => {
+                    const fieldId = license.fldNpdidField;
+                    const companyId = license.cmpNpdidCompany;
+                    
+                    if (!fieldId || !companyId) return;
+                    
+                    if (!this.indices.licensesByField.has(fieldId)) {
+                        this.indices.licensesByField.set(fieldId, new Map());
+                    }
+                    
+                    if (!this.indices.licensesByField.get(fieldId).has(companyId)) {
+                        this.indices.licensesByField.get(fieldId).set(companyId, []);
+                    }
+                    
+                    this.indices.licensesByField.get(fieldId).get(companyId).push(license);
+                });
+            }
+
+            // Build index of production data by field and month for O(1) lookup
+            buildProductionIndex() {
+                this.indices.productionByField.clear();
+                
+                this.filteredProductionData.forEach(row => {
+                    const fieldId = row.prfNpdidInformationCarrier;
+                    if (!fieldId) return;
+                    
+                    const monthKey = formatDate(parseDate(row.prfYear, row.prfMonth));
+                    
+                    if (!this.indices.productionByField.has(fieldId)) {
+                        this.indices.productionByField.set(fieldId, new Map());
+                    }
+                    
+                    this.indices.productionByField.get(fieldId).set(monthKey, row);
+                });
+            }
+
+            // Build relationship maps for which companies are in which fields
+            buildRelationshipMaps() {
+                this.indices.fieldCompanies.clear();
+                this.indices.companyFields.clear();
+                
+                this.filteredProductionData.forEach(row => {
+                    const fieldId = row.prfNpdidInformationCarrier;
+                    if (!fieldId) return;
+                    
+                    const rowDate = parseDate(row.prfYear, row.prfMonth);
+                    const fieldLicenses = this.indices.licensesByField.get(fieldId);
+                    
+                    if (fieldLicenses) {
+                        fieldLicenses.forEach((licenses, companyId) => {
+                            // Check if any license is active for this month
+                            const hasActiveLicense = licenses.some(license => 
+                                this.isLicenseActiveForDate(license, rowDate)
+                            );
+                            
+                            if (hasActiveLicense) {
+                                // Add to field->companies mapping
+                                if (!this.indices.fieldCompanies.has(fieldId)) {
+                                    this.indices.fieldCompanies.set(fieldId, new Set());
+                                }
+                                this.indices.fieldCompanies.get(fieldId).add(companyId);
+                                
+                                // Add to company->fields mapping
+                                if (!this.indices.companyFields.has(companyId)) {
+                                    this.indices.companyFields.set(companyId, new Set());
+                                }
+                                this.indices.companyFields.get(companyId).add(fieldId);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Precompute which licenses are active for the current date range
+            precomputeLicenseActivity() {
+                this.indices.activeLicenses.clear();
+                
+                this.rawData.licensee.forEach((license, index) => {
+                    const fromDate = parseLicenseDate(license.fldLicenseeFrom) || new Date('1900-01-01');
+                    const toDate = parseLicenseDate(license.fldLicenseeTo) || new Date('2099-12-31');
+                    
+                    const licenseKey = `${index}`;
+                    this.indices.activeLicenses.set(licenseKey, {
+                        license: license,
+                        fromDate: fromDate,
+                        toDate: toDate,
+                        isActiveInRange: this.currentDateRange.startDate <= toDate && this.currentDateRange.endDate >= fromDate
+                    });
+                });
+            }
+
+            // Check if license is active for specific date (optimized)
+            isLicenseActiveForDate(license, targetDate) {
+                const fromDate = parseLicenseDate(license.fldLicenseeFrom) || new Date('1900-01-01');
+                const toDate = parseLicenseDate(license.fldLicenseeTo) || new Date('2099-12-31');
+                return targetDate >= fromDate && targetDate <= toDate;
+            }
+
+            // Get licenses for field/company combination (O(1) lookup)
+            getLicensesForFieldCompany(fieldId, companyId) {
+                return this.indices.licensesByField.get(fieldId)?.get(companyId) || [];
+            }
+
+            // Get production data for field/month combination (O(1) lookup)
+            getProductionForFieldMonth(fieldId, monthKey) {
+                return this.indices.productionByField.get(fieldId)?.get(monthKey);
+            }
+
+            // Get all companies with production in current date range
+            getCompaniesWithProduction() {
+                const companies = new Set();
+                this.indices.companyFields.forEach((fields, companyId) => {
+                    if (fields.size > 0) {
+                        companies.add(companyId);
+                    }
+                });
+                return Array.from(companies);
+            }
+
+            // Get field name by ID (O(1) lookup)
+            getFieldName(fieldId) {
+                return this.metadata.fieldNames.get(fieldId);
+            }
+
+            // Get company name by ID (O(1) lookup)
+            getCompanyName(companyId) {
+                return this.metadata.companyNames.get(companyId);
+            }
+
+            // Check if both datasets are loaded
+            isDataReady() {
+                return this.rawData.production && this.rawData.licensee;
+            }
         }
 
-        function calculateAnalyticalKPIs(filteredFieldData, referenceKey, allSortedKeys) {
-            // (Keep implementation from previous version)
-            const productionThreshold = 0.1;
+        // ===================================================================
+        // EQUITY CALCULATOR CLASS - Handles company equity calculations with caching
+        // ===================================================================
 
-            if (!referenceKey || !allSortedKeys || allSortedKeys.length === 0) {
-                 return { topProducers: [], biggestMovers: [], latestDateKey: referenceKey, totalLatest: { oe: 0, oil: 0, gas: 0 }, sortedDateKeys: allSortedKeys };
+        class EquityCalculator {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.equityCache = new Map(); // fieldId|monthKey|companyId -> equity value
+                this.equityMatrix = new Map(); // fieldId -> monthKey -> companyId -> equity
             }
 
-            let refIndex = allSortedKeys.indexOf(referenceKey);
-            if (refIndex === -1) {
-                 referenceKey = allSortedKeys[allSortedKeys.length - 1];
-                 refIndex = allSortedKeys.length - 1;
+            // Calculate individual license equity share
+            calculateLicenseEquity(fldCompanyShare, fldSdfiShare) {
+                const companyShare = parseFloat(fldCompanyShare) || 0;
+                const sdfiShare = parseFloat(fldSdfiShare) || 100.0;
+                return (companyShare / 100) * (sdfiShare / 100);
             }
-            const prevKey = refIndex > 0 ? allSortedKeys[refIndex - 1] : null;
 
-            const fieldTotalsLatest = {};
-            const fieldTotalsPrev = {};
-            let totalLatest = { oe: 0, oil: 0, gas: 0 };
-
-            Object.entries(filteredFieldData).forEach(([fieldName, dateData]) => {
-                if (dateData[referenceKey]) {
-                    const latest = dateData[referenceKey];
-                    const primary = latest.oil > (latest.gas * 1000) ? 'oil' : 'gas';
-                    fieldTotalsLatest[fieldName] = { oe: latest.oe, oil: latest.oil, gas: latest.gas, primary };
-                    totalLatest.oe += latest.oe;
-                    totalLatest.oil += latest.oil;
-                    totalLatest.gas += latest.gas;
+            // Get company equity in field for specific month (cached O(1) lookup)
+            getCompanyEquity(fieldId, monthKey, companyId) {
+                const cacheKey = `${fieldId}|${monthKey}|${companyId}`;
+                
+                if (this.equityCache.has(cacheKey)) {
+                    return this.equityCache.get(cacheKey);
                 }
-                if (prevKey && dateData[prevKey]) {
-                     const prev = dateData[prevKey];
-                     fieldTotalsPrev[fieldName] = { oe: prev.oe, oil: prev.oil, gas: prev.gas };
+
+                const equity = this.calculateCompanyEquity(fieldId, monthKey, companyId);
+                this.equityCache.set(cacheKey, equity);
+                return equity;
+            }
+
+            // Calculate total company equity in field for specific month
+            calculateCompanyEquity(fieldId, monthKey, companyId) {
+                const rowDate = new Date(monthKey + '-01');
+                const licenses = this.dataManager.getLicensesForFieldCompany(fieldId, companyId);
+                
+                let totalEquity = 0;
+                licenses.forEach(license => {
+                    if (this.dataManager.isLicenseActiveForDate(license, rowDate)) {
+                        totalEquity += this.calculateLicenseEquity(license.fldCompanyShare, license.fldSdfiShare);
+                    }
+                });
+
+                return totalEquity;
+            }
+
+            // Precompute equity matrix for all field/month/company combinations
+            precomputeEquityMatrix(selectedCompanies, months) {
+                this.equityMatrix.clear();
+                
+                selectedCompanies.forEach(companyId => {
+                    const companyFields = this.dataManager.indices.companyFields.get(companyId) || new Set();
+                    
+                    companyFields.forEach(fieldId => {
+                        if (!this.equityMatrix.has(fieldId)) {
+                            this.equityMatrix.set(fieldId, new Map());
+                        }
+                        
+                        months.forEach(monthKey => {
+                            if (!this.equityMatrix.get(fieldId).has(monthKey)) {
+                                this.equityMatrix.get(fieldId).set(monthKey, new Map());
+                            }
+                            
+                            const equity = this.getCompanyEquity(fieldId, monthKey, companyId);
+                            this.equityMatrix.get(fieldId).get(monthKey).set(companyId, equity);
+                        });
+                    });
+                });
+            }
+
+            // Clear equity cache when data changes
+            clearCache() {
+                this.equityCache.clear();
+                this.equityMatrix.clear();
+            }
+
+            // Get equity breakdown for tooltip display
+            getEquityBreakdown(fieldId, monthKey, selectedCompanies) {
+                const breakdown = {};
+                let totalSelectedEquity = 0;
+                
+                selectedCompanies.forEach(companyId => {
+                    const equity = this.getCompanyEquity(fieldId, monthKey, companyId);
+                    if (equity > 0) {
+                        const companyName = this.dataManager.getCompanyName(companyId);
+                        breakdown[companyName] = equity;
+                        totalSelectedEquity += equity;
+                    }
+                });
+                
+                return { breakdown, totalSelectedEquity };
+            }
+        }
+
+        // ===================================================================
+        // PRODUCTION PROCESSOR CLASS - Handles production calculations and unit conversions
+        // ===================================================================
+
+        class ProductionProcessor {
+            constructor(dataManager, equityCalculator) {
+                this.dataManager = dataManager;
+                this.equityCalculator = equityCalculator;
+            }
+
+            // Convert production values based on unit system
+            convertProduction(value, resourceType, unitSystem, year, month) {
+                if (unitSystem === 'si-monthly') {
+                    return value * 1000;
                 }
-            });
-
-            const topProducers = Object.entries(fieldTotalsLatest)
-                .sort(([, dataA], [, dataB]) => dataB.oe - dataA.oe)
-                .slice(0, 10)
-                .map(([name, data]) => ({ name, oe: data.oe, primary: data.primary }));
-
-            const movers = [];
-            Object.keys(fieldTotalsLatest).forEach(fieldName => {
-                const latest = fieldTotalsLatest[fieldName];
-                const prev = fieldTotalsPrev[fieldName];
-                if (latest.oe > productionThreshold || (prev !== undefined && prev.oe > productionThreshold)) {
-                    let change = 0; let percentChange = 0;
-                    if (prev !== undefined) {
-                        change = latest.oe - prev.oe;
-                        if (prev.oe !== 0) percentChange = (change / prev.oe) * 100;
-                        else if (latest.oe > 0) percentChange = Infinity;
-                        movers.push({ name: fieldName, change, percentChange, latestOE: latest.oe, prevOE: prev.oe, primary: latest.primary });
+                
+                const daysInMonth = getDaysInMonth(year, month);
+                
+                if (unitSystem === 'si-daily') {
+                    return (value * 1000) / daysInMonth;
+                }
+                
+                if (unitSystem === 'barrels-daily') {
+                    if (resourceType === 'prfPrdGasNetBillSm3') {
+                        return ((value * 1000) * CONFIG.CUBIC_METER_TO_CUBIC_FEET) / daysInMonth;
                     } else {
-                        movers.push({ name: fieldName, change: latest.oe, percentChange: Infinity, latestOE: latest.oe, prevOE: 0, primary: latest.primary });
+                        return ((value * 1000) * CONFIG.CUBIC_METER_TO_BARRELS) / daysInMonth;
                     }
                 }
-            });
-
-             const sortedMovers = movers.sort((a, b) => {
-                 const absA = Math.abs(a.percentChange);
-                 const absB = Math.abs(b.percentChange);
-                 if (absA === Infinity && absB === Infinity) return Math.abs(b.change) - Math.abs(a.change);
-                 if (absA === Infinity) return -1;
-                 if (absB === Infinity) return 1;
-                 return absB - absA;
-             }).slice(0, 5);
-
-             return { topProducers, biggestMovers: sortedMovers, latestDateKey: referenceKey, totalLatest, sortedDateKeys: allSortedKeys };
-        }
-
-
-        // --- Rendering Functions ---
-        function renderFieldFilter() {
-            // (Keep implementation from previous version)
-             fieldFilterSelect.innerHTML = '';
-             uniqueFields.forEach(field => {
-                 const option = document.createElement('option');
-                 option.value = field; option.textContent = field;
-                 fieldFilterSelect.appendChild(option);
-             });
-        }
-
-        function renderDiveInFieldSelect() {
-            // (Keep implementation from previous version)
-             diveInFieldSelect.innerHTML = '<option value="">-- Select Field --</option>';
-             uniqueFields.forEach(field => {
-                 const option = document.createElement('option');
-                 option.value = field;
-                 option.textContent = field;
-                 diveInFieldSelect.appendChild(option);
-             });
-        }
-
-
-        function renderKPIs(kpiResults) {
-            // (Keep implementation from previous version)
-            kpiContainer.innerHTML = '';
-
-            if (!kpiResults || !kpiResults.latestDateKey) {
-                kpiContainer.innerHTML = '<div class="kpi-card col-span-full"><div class="kpi-title">No data available for reference month.</div></div>';
-                prevKpiMonthButton.disabled = true;
-                nextKpiMonthButton.disabled = true;
-                kpiReferenceMonthSpan.textContent = 'N/A';
-                return;
-            }
-            const refMonth = kpiResults.latestDateKey;
-            kpiReferenceMonthSpan.textContent = refMonth;
-
-            // KPI 1: Total Production
-            const kpiTotal = document.createElement('div');
-            kpiTotal.className = 'kpi-card';
-            kpiTotal.innerHTML = `
-                <div class="kpi-title">Total Production (${refMonth})</div>
-                <div class="kpi-value">${kpiResults.totalLatest.oe.toFixed(3)}<span class="kpi-unit">Mill Sm³ OE</span></div>
-                <div class="kpi-subvalue">Oil: ${kpiResults.totalLatest.oil.toFixed(3)} Mill Sm³</div>
-                <div class="kpi-subvalue">Gas: ${kpiResults.totalLatest.gas.toFixed(3)} Bill Sm³</div>
-            `;
-            kpiContainer.appendChild(kpiTotal);
-
-            // KPI 2: Top 10 Producers
-            const kpiTop = document.createElement('div');
-            kpiTop.className = 'kpi-card';
-            let topProducersHtml = kpiResults.topProducers.map(p => {
-                 const colorClass = p.primary === 'oil' ? 'field-oil' : 'field-gas';
-                 // Make the span clickable
-                 return `<div class="text-xs truncate" title="${p.name}: ${p.oe.toFixed(3)} Mill Sm³ OE"><span class="${colorClass} clickable-field-name" data-field-name="${p.name}">${p.name}</span>: ${p.oe.toFixed(3)}</div>`;
-             }).join('');
-            if (!topProducersHtml) topProducersHtml = '<div class="text-xs text-gray-400">N/A</div>';
-            kpiTop.innerHTML = `
-                <div class="kpi-title">Top 10 Producers (${refMonth} OE)</div>
-                <div class="space-y-1">${topProducersHtml}</div>`;
-            kpiContainer.appendChild(kpiTop);
-
-            // KPI 3: Biggest Monthly Change
-            const kpiMovers = document.createElement('div');
-            kpiMovers.className = 'kpi-card';
-            let moversHtml = kpiResults.biggestMovers.map(m => {
-                 const changeText = m.percentChange === Infinity ? `Started` : `${m.percentChange >= 0 ? '+' : ''}${m.percentChange.toFixed(1)}%`;
-                 const colorClassChange = m.change > 0 ? 'text-green-600' : (m.change < 0 ? 'text-red-600' : '');
-                 const fieldColorClass = m.primary === 'oil' ? 'field-oil' : 'field-gas';
-                 // Make the span clickable
-                 return `
-                     <div class="text-xs mb-1 flex justify-between items-center" title="${m.name}">
-                        <span class="${fieldColorClass} mr-1 truncate flex-shrink clickable-field-name" data-field-name="${m.name}" style="max-width: 50%;">${m.name}</span>
-                        <span class="text-gray-500 text-[11px] whitespace-nowrap flex-shrink-0 mx-1">(${m.prevOE.toFixed(3)}&#x2192;${m.latestOE.toFixed(3)})</span>
-                        <span class="${colorClassChange} ml-1 font-medium flex-shrink-0">${changeText}</span>
-                     </div>`;
-             }).join('');
-            if (!moversHtml) moversHtml = '<div class="text-xs text-gray-400">N/A (Threshold: 0.1 OE)</div>';
-            kpiMovers.innerHTML = `
-                <div class="kpi-title">Biggest Monthly Change (OE)</div>
-                <div class="space-y-1">${moversHtml}</div>`;
-            kpiContainer.appendChild(kpiMovers);
-
-            // Update KPI navigation button states
-            const refIndex = kpiResults.sortedDateKeys.indexOf(refMonth);
-            prevKpiMonthButton.disabled = refIndex <= 0;
-            nextKpiMonthButton.disabled = refIndex >= kpiResults.sortedDateKeys.length - 1;
-        }
-
-        function renderProductionChart(timeSeries) {
-            // (Keep implementation from previous version)
-              const ctx = chartCanvas.getContext('2d');
-             if (productionChartInstance) productionChartInstance.destroy();
-
-             let displayData = timeSeries;
-
-             if (summarizeYearly && timeSeries && timeSeries.labels.length > 0) {
-                 const yearlySummary = {};
-                 timeSeries.labels.forEach((label, index) => {
-                     const year = label.substring(0, 4);
-                     if (!yearlySummary[year]) yearlySummary[year] = { oil: 0, gas: 0, oe: 0 };
-                     yearlySummary[year].oil += timeSeries.oil[index];
-                     yearlySummary[year].gas += timeSeries.gas[index];
-                     yearlySummary[year].oe += timeSeries.oe[index];
-                 });
-                 const yearlyLabels = Object.keys(yearlySummary).sort();
-                 displayData = {
-                     labels: yearlyLabels,
-                     oil: yearlyLabels.map(year => yearlySummary[year].oil),
-                     gas: yearlyLabels.map(year => yearlySummary[year].gas),
-                     oe: yearlyLabels.map(year => yearlySummary[year].oe),
-                 };
-             }
-
-             if (!displayData || displayData.labels.length === 0) {
-                 ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-                 ctx.textAlign = 'center'; ctx.fillStyle = '#6b7280';
-                 ctx.fillText('No data to display for selected filters.', chartCanvas.width / 2, chartCanvas.height / 2);
-                 mainChartConfig = null;
-                 return;
-             }
-
-             mainChartConfig = {
-                 type: 'line',
-                 data: {
-                     labels: displayData.labels,
-                     datasets: [
-                         { label: 'Total Oil (Mill Sm³)', data: displayData.oil, borderColor: 'rgb(54, 162, 235)', tension: 0.1, yAxisID: 'yProd' },
-                         { label: 'Total Gas (Bill Sm³)', data: displayData.gas, borderColor: 'rgb(255, 99, 132)', tension: 0.1, yAxisID: 'yProd' },
-                         { label: 'Total OE (Mill Sm³)', data: displayData.oe, borderColor: 'rgb(75, 192, 192)', tension: 0.1, yAxisID: 'yProd' }
-                     ]
-                 },
-                  options: {
-                     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                     scales: { x: { title: { display: true, text: summarizeYearly ? 'Year' : 'Month' } }, yProd: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Production Volume' } } },
-                     plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label || ''}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(3) : 'N/A'}` } } }
-                 }
-             };
-
-            productionChartInstance = new Chart(ctx, mainChartConfig);
-        }
-
-        function populateTable() {
-            // (Keep implementation from previous version)
-             console.log("Populating table for the first time...");
-             tableHead.innerHTML = ''; tableBody.innerHTML = '';
-
-             if (!rawData || rawData.rows.length === 0) {
-                  tableBody.innerHTML = '<tr><td colspan="100%" class="px-6 py-4 text-center text-gray-500">No raw data available.</td></tr>';
-                  return;
-             }
-
-             const headerRow = document.createElement('tr');
-             rawData.headers.forEach(headerText => {
-                 const th = document.createElement('th');
-                 th.scope = 'col'; th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap';
-                 th.textContent = headerText; headerRow.appendChild(th);
-             });
-             tableHead.appendChild(headerRow);
-
-             rawData.rows.forEach(rowArray => {
-                 const row = document.createElement('tr');
-                 rowArray.forEach(cellText => {
-                     const td = document.createElement('td');
-                     td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
-                     td.textContent = cellText; row.appendChild(td);
-                 });
-                 tableBody.appendChild(row);
-             });
-             isTablePopulated = true;
-             console.log("Table populated.");
-        }
-
-        // Updated renderFieldDiveIn for unit conversion, 24 month view, and daily toggle
-        function renderFieldDiveIn(fieldName) {
-             // (Keep KPI calculation and update logic from previous version)
-            if (!fieldName) {
-                fieldDiveInArea.classList.add('hidden');
-                diveInChartConfig = null;
-                return;
-            }
-            const fieldHistory = rawData.fieldData?.[fieldName];
-            if (!fieldHistory) {
-                fieldDiveInArea.classList.add('hidden');
-                diveInChartConfig = null;
-                return;
-            }
-            const startDateStr = startDateInput.value;
-            const endDateStr = endDateInput.value;
-            const startDate = startDateStr ? parseDateYYYYMM(startDateStr) : null;
-            const endDate = endDateStr ? parseDateYYYYMM(endDateStr) : null;
-            const dataForPeriod = {};
-            const sortedKeysFullHistory = Object.keys(fieldHistory).sort();
-            const sortedKeysInPeriod = [];
-            sortedKeysFullHistory.forEach(dateKey => {
-                 const entryDate = parseDateYYYYMM(dateKey);
-                 if (!isValidDate(entryDate)) return;
-                 const startDateMatch = !startDate || !isBefore(entryDate, startDate);
-                 const endDateMatch = !endDate || !isAfter(entryDate, endDate);
-                 if (startDateMatch && endDateMatch) {
-                     dataForPeriod[dateKey] = fieldHistory[dateKey];
-                     sortedKeysInPeriod.push(dateKey);
-                 }
-            });
-
-            diveInChartToggleContainer.querySelectorAll('button').forEach(btn => {
-                 btn.classList.toggle('active', btn.dataset.mode === diveInChartMode);
-            });
-            showDailyToggleCheckbox.checked = showDailyAverages;
-
-            if (sortedKeysInPeriod.length === 0) {
-                 fieldDiveInArea.innerHTML = ` ... No data message ... `; // Simplified
-                 attachDiveInListeners();
-                 fieldDiveInArea.classList.remove('hidden');
-                 diveInChartConfig = null;
-                 return;
+                
+                return value;
             }
 
-            const latestDateKey = sortedKeysInPeriod[sortedKeysInPeriod.length - 1];
-            const latestData = dataForPeriod[latestDateKey];
-            const latestDate = parseDateYYYYMM(latestDateKey);
-            const prevYearDate = subYears(latestDate, 1);
-            const prevYearKey = formatDateYYYYMM(prevYearDate);
-            const prevYearDataRaw = rawData.fieldData?.[fieldName]?.[prevYearKey];
-            let yoyChangeText = "N/A";
-            if (prevYearDataRaw?.oe > 0) { yoyChangeText = `${((latestData.oe - prevYearDataRaw.oe) / prevYearDataRaw.oe * 100).toFixed(1)}%`; if(latestData.oe >= prevYearDataRaw.oe) yoyChangeText = "+" + yoyChangeText; }
-            else if (!prevYearDataRaw && isValidDate(prevYearDate)) { yoyChangeText = "No Prior Year Data"; }
-            const totalOeInPeriod = sortedKeysInPeriod.reduce((sum, key) => sum + dataForPeriod[key].oe, 0);
-            let totalOeLastYear = 0;
-            if(isValidDate(latestDate)) { const lastCalYear = latestDate.getFullYear() - 1; Object.keys(rawData.fieldData?.[fieldName] || {}).forEach(key => { if (rawData.fieldData[fieldName][key].year === lastCalYear) totalOeLastYear += rawData.fieldData[fieldName][key].oe; }); }
+            // Extract specific resource production from row data
+            getResourceProduction(row, resourceType) {
+                if (resourceType === 'oe') {
+                    return (parseFloat(row.prfPrdOilNetMillSm3) || 0) + 
+                           (parseFloat(row.prfPrdGasNetBillSm3) || 0) + 
+                           (parseFloat(row.prfPrdNGLNetMillSm3) || 0) + 
+                           (parseFloat(row.prfPrdCondensateNetMillSm3) || 0);
+                }
+                return parseFloat(row[resourceType]) || 0;
+            }
 
-             if (!document.getElementById('diveInLatestProdOE')) {
-                  fieldDiveInArea.innerHTML = ` ... Rebuild structure ... `;
-                  attachDiveInListeners();
-             }
-             document.getElementById('diveInFieldSelect').value = fieldName;
-             document.getElementById('diveInLatestMonth').textContent = latestDateKey;
-             document.getElementById('diveInLatestProdOE').innerHTML = `${latestData.oe.toFixed(3)}<span class="kpi-unit">OE</span>`;
-             document.getElementById('diveInLatestProdOil').innerHTML = `${latestData.oil.toFixed(3)}<span class="kpi-unit">Oil Mill Sm³</span>`;
-             document.getElementById('diveInLatestProdGas').innerHTML = `${latestData.gas.toFixed(3)}<span class="kpi-unit">Gas Bill Sm³</span>`;
-             document.getElementById('diveInYoYChange').textContent = yoyChangeText;
-             document.getElementById('diveInYoYChange').className = `kpi-value ${yoyChangeText.startsWith('+') ? 'text-green-600' : (yoyChangeText.startsWith('-') ? 'text-red-600' : '')}`;
-             document.getElementById('diveInTotalProd').innerHTML = `${totalOeInPeriod.toFixed(3)}<span class="kpi-unit">Mill Sm³</span>`;
-             document.getElementById('diveInTotalLastYear').innerHTML = `${totalOeLastYear.toFixed(3)}<span class="kpi-unit">Mill Sm³</span>`;
+            // Process production data for selected companies and generate chart data
+            processProductionData(selectedCompanies, unitSystem) {
+                const allResourceData = {};
+                
+                // Initialize data structures for all resource types
+                CONFIG.RESOURCE_TYPES.forEach(resourceType => {
+                    allResourceData[resourceType.key] = {};
+                });
 
-            // --- Prepare Chart Data ---
-            let chartLabels = [];
-            let chartOilData = []; // Target: kSm³
-            let chartGasData = []; // Target: Mill Sm³
-            let chartTitle = "";
-            let xAxisTitle = "";
-            const dailySuffix = showDailyAverages ? "/day" : "/mo";
-            let yAxisTitle = `Volume (Gas: Mill Sm³${dailySuffix}, Oil: kSm³${dailySuffix})`;
+                if (selectedCompanies.length === 0) {
+                    // Show total field production when no companies selected
+                    this.processTotal(allResourceData, unitSystem);
+                } else {
+                    // Show company equity-based production
+                    this.processEquityBased(allResourceData, selectedCompanies, unitSystem);
+                }
 
-            if (diveInChartMode === 'monthly') {
-                // Use 24 months lookback
-                chartTitle = `Last 24 Months Production`;
-                xAxisTitle = "Month";
-                const monthlyDataProcessed = {};
-                const endDateFor24m = parseDateYYYYMM(latestDateKey);
-                const startDateFor24m = startOfMonth(subMonths(endDateFor24m, 23)); // Look back 23 months
+                return allResourceData;
+            }
 
-                if (eachMonthOfInterval && isValidDate(startDateFor24m) && isValidDate(endDateFor24m)) {
-                    const intervalMonths = eachMonthOfInterval({ start: startDateFor24m, end: endDateFor24m });
-                    intervalMonths.forEach(monthDate => {
-                        const monthKey = formatDateYYYYMM(monthDate);
-                        const entry = dataForPeriod[monthKey]; // Use data filtered by main date range
-                        const originalOil = entry?.oil || 0;
-                        const originalGas = entry?.gas || 0;
-                        const daysInMonth = _getDaysInMonth(monthDate);
-                        const divisor = showDailyAverages ? daysInMonth : 1;
+            // Process total production data without equity calculations
+            processTotal(allResourceData, unitSystem) {
+                this.dataManager.filteredProductionData.forEach(row => {
+                    const fieldId = row.prfNpdidInformationCarrier;
+                    const fieldName = this.dataManager.getFieldName(fieldId);
+                    if (!fieldName) return;
 
-                        if (divisor > 0) {
-                             monthlyDataProcessed[monthKey] = {
-                                 // Oil: Mill Sm³/mo -> kSm³/mo|day
-                                 oil: (originalOil * 1000) / divisor,
-                                 // Gas: Bill Sm³/mo -> Mill Sm³/mo|day
-                                 gas: (originalGas * 1000) / divisor
-                             };
-                        } else { monthlyDataProcessed[monthKey] = { oil: 0, gas: 0 }; }
+                    const rowDate = parseDate(row.prfYear, row.prfMonth);
+                    const monthKey = formatDate(rowDate);
+                    const year = parseInt(row.prfYear);
+                    const month = parseInt(row.prfMonth);
+
+                    CONFIG.RESOURCE_TYPES.forEach(resourceType => {
+                        const production = this.getResourceProduction(row, resourceType.key);
+                        const convertedProduction = this.convertProduction(production, resourceType.key, unitSystem, year, month);
+
+                        if (convertedProduction > 0) {
+                            if (!allResourceData[resourceType.key][fieldName]) {
+                                allResourceData[resourceType.key][fieldName] = {};
+                            }
+                            if (!allResourceData[resourceType.key][fieldName][monthKey]) {
+                                allResourceData[resourceType.key][fieldName][monthKey] = 0;
+                            }
+                            allResourceData[resourceType.key][fieldName][monthKey] += convertedProduction;
+                        }
+                    });
+                });
+            }
+
+            // Process equity-based production data for selected companies
+            processEquityBased(allResourceData, selectedCompanies, unitSystem) {
+                this.dataManager.filteredProductionData.forEach(row => {
+                    const fieldId = row.prfNpdidInformationCarrier;
+                    const fieldName = this.dataManager.getFieldName(fieldId);
+                    if (!fieldName) return;
+
+                    const rowDate = parseDate(row.prfYear, row.prfMonth);
+                    const monthKey = formatDate(rowDate);
+                    const year = parseInt(row.prfYear);
+                    const month = parseInt(row.prfMonth);
+
+                    // Calculate total equity for all selected companies
+                    let totalSelectedEquity = 0;
+                    selectedCompanies.forEach(companyId => {
+                        totalSelectedEquity += this.equityCalculator.getCompanyEquity(fieldId, monthKey, companyId);
+                    });
+
+                    if (totalSelectedEquity > 0) {
+                        CONFIG.RESOURCE_TYPES.forEach(resourceType => {
+                            const production = this.getResourceProduction(row, resourceType.key);
+                            const rawProduction = production * totalSelectedEquity;
+                            const convertedProduction = this.convertProduction(rawProduction, resourceType.key, unitSystem, year, month);
+
+                            if (convertedProduction > 0) {
+                                if (!allResourceData[resourceType.key][fieldName]) {
+                                    allResourceData[resourceType.key][fieldName] = {};
+                                }
+                                if (!allResourceData[resourceType.key][fieldName][monthKey]) {
+                                    allResourceData[resourceType.key][fieldName][monthKey] = 0;
+                                }
+                                allResourceData[resourceType.key][fieldName][monthKey] += convertedProduction;
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Get unit label for chart axes based on unit system and resource type
+            getUnitLabel(resourceType, unitSystem) {
+                const unitLabels = {
+                    'si-monthly': {
+                        'oe': 'kOE', 'prfPrdOilNetMillSm3': 'kCM', 'prfPrdGasNetBillSm3': 'MCM',
+                        'prfPrdNGLNetMillSm3': 'kCM', 'prfPrdCondensateNetMillSm3': 'kCM'
+                    },
+                    'si-daily': {
+                        'oe': 'kOE/day', 'prfPrdOilNetMillSm3': 'kCM/day', 'prfPrdGasNetBillSm3': 'MCM/day',
+                        'prfPrdNGLNetMillSm3': 'kCM/day', 'prfPrdCondensateNetMillSm3': 'kCM/day'
+                    },
+                    'barrels-daily': {
+                        'oe': 'kBBL/day OE', 'prfPrdOilNetMillSm3': 'kBBL/day', 'prfPrdGasNetBillSm3': 'MCF/day',
+                        'prfPrdNGLNetMillSm3': 'kBBL/day', 'prfPrdCondensateNetMillSm3': 'kBBL/day'
+                    }
+                };
+                return unitLabels[unitSystem][resourceType] || '';
+            }
+        }
+
+        // ===================================================================
+        // UI MANAGER CLASS - Handles user interface interactions and company selection
+        // ===================================================================
+
+        class UIManager {
+            constructor(eventBus, dataManager) {
+                this.eventBus = eventBus;
+                this.dataManager = dataManager;
+                this.selectedCompanies = [];
+                this.availableCompanies = [];
+                this.filteredCompanies = [];
+                this.isDropdownVisible = false;
+                
+                this.initializeEventListeners();
+            }
+
+            // Set up all UI event listeners
+            initializeEventListeners() {
+                this.eventBus.on('companiesUpdated', (data) => {
+                    this.updateAvailableCompanies(data.companies);
+                });
+            }
+
+            // Initialize the multi-select dropdown functionality
+            initializeMultiSelect() {
+                const toggleBtn = document.getElementById('toggleDropdown');
+                const dropdownContainer = document.getElementById('dropdownContainer');
+                const searchInput = document.getElementById('companySearch');
+
+                toggleBtn.addEventListener('click', () => {
+                    if (this.isDropdownVisible) {
+                        this.hideDropdown();
+                    } else {
+                        this.showDropdown();
+                    }
+                });
+
+                searchInput.addEventListener('input', (e) => {
+                    this.filterCompanies(e.target.value);
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#dropdownContainer') && !e.target.closest('#toggleDropdown')) {
+                        this.hideDropdown();
+                    }
+                });
+            }
+
+            // Show the company selection dropdown
+            showDropdown() {
+                const dropdownContainer = document.getElementById('dropdownContainer');
+                const searchInput = document.getElementById('companySearch');
+                
+                dropdownContainer.classList.remove('hidden');
+                this.isDropdownVisible = true;
+                searchInput.value = '';
+                this.filterCompanies('');
+                setTimeout(() => searchInput.focus(), 100);
+            }
+
+            // Hide the company selection dropdown
+            hideDropdown() {
+                const dropdownContainer = document.getElementById('dropdownContainer');
+                dropdownContainer.classList.add('hidden');
+                this.isDropdownVisible = false;
+            }
+
+            // Filter companies based on search term
+            filterCompanies(searchTerm) {
+                this.filteredCompanies = this.availableCompanies.filter(company => 
+                    company.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                this.renderCompanyList();
+            }
+
+            // Render the filtered company list with checkboxes
+            renderCompanyList() {
+                const companyList = document.getElementById('companyList');
+                companyList.innerHTML = '';
+
+                this.filteredCompanies.forEach(company => {
+                    const isSelected = this.selectedCompanies.some(selected => selected.id === company.id);
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.innerHTML = `
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} class="w-4 h-4 text-blue-600">
+                        <span class="flex-1">${company.name}</span>
+                    `;
+                    item.addEventListener('click', () => this.toggleCompanySelection(company));
+                    companyList.appendChild(item);
+                });
+            }
+
+            // Toggle company selection state
+            toggleCompanySelection(company) {
+                const index = this.selectedCompanies.findIndex(selected => selected.id === company.id);
+                
+                if (index === -1) {
+                    this.selectedCompanies.push(company);
+                } else {
+                    this.selectedCompanies.splice(index, 1);
+                }
+                
+                this.updateSelectedCompaniesDisplay();
+                this.renderCompanyList();
+                this.eventBus.emit('companiesSelected', { companies: this.selectedCompanies });
+            }
+
+            // Remove company from selection
+            removeCompanySelection(companyId) {
+                const index = this.selectedCompanies.findIndex(company => company.id === companyId);
+                if (index !== -1) {
+                    this.selectedCompanies.splice(index, 1);
+                    this.updateSelectedCompaniesDisplay();
+                    this.renderCompanyList();
+                    this.eventBus.emit('companiesSelected', { companies: this.selectedCompanies });
+                }
+            }
+
+            // Update the visual display of selected companies
+            updateSelectedCompaniesDisplay() {
+                const container = document.getElementById('selectedCompanies');
+                container.innerHTML = '';
+                
+                this.selectedCompanies.forEach((company) => {
+                    const pill = document.createElement('div');
+                    pill.className = 'company-pill';
+                    pill.innerHTML = `
+                        <span>${company.name}</span>
+                        <div class="remove-btn" onclick="window.uiManager.removeCompanySelection('${company.id}')">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    `;
+                    container.appendChild(pill);
+                });
+                
+                const toggleBtn = document.createElement('button');
+                toggleBtn.id = 'toggleDropdown';
+                if (this.selectedCompanies.length === 0) {
+                    toggleBtn.className = 'toggle-button';
+                    toggleBtn.innerHTML = '<i class="fas fa-plus"></i><span>Select Company</span>';
+                } else {
+                    toggleBtn.className = 'edit-button';
+                    toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                }
+                
+                container.appendChild(toggleBtn);
+                this.initializeMultiSelect();
+            }
+
+            // Update available companies list
+            updateAvailableCompanies(companyIds) {
+                this.availableCompanies = companyIds
+                    .map(id => ({ 
+                        id, 
+                        name: this.dataManager.getCompanyName(id) || `Company ${id}` 
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                
+                this.filteredCompanies = [...this.availableCompanies];
+                
+                // Remove invalid selections
+                this.selectedCompanies = this.selectedCompanies.filter(selected => 
+                    this.availableCompanies.some(available => available.id === selected.id)
+                );
+                
+                this.updateSelectedCompaniesDisplay();
+            }
+
+            // Get currently selected company IDs
+            getSelectedCompanyIds() {
+                return this.selectedCompanies.map(company => company.id);
+            }
+
+            // Get currently selected company names
+            getSelectedCompanyNames() {
+                return this.selectedCompanies.map(company => company.name);
+            }
+        }
+
+        // ===================================================================
+        // CHART MANAGER CLASS - Handles chart creation, updates and styling
+        // ===================================================================
+
+        class ChartManager {
+            constructor(eventBus, dataManager, equityCalculator) {
+                this.eventBus = eventBus;
+                this.dataManager = dataManager;
+                this.equityCalculator = equityCalculator;
+                this.charts = new Map();
+                this.expandedCharts = new Set(); // Track which charts are expanded
+            }
+
+            // Toggle chart expanded state
+            toggleChart(resourceKey) {
+                const chartId = this.getChartIdByResourceKey(resourceKey);
+                const chartContainer = document.querySelector(`#${chartId}`).closest('.chart-container');
+                const toggleButton = chartContainer.querySelector('.chart-toggle-btn');
+                const isExpanded = this.expandedCharts.has(resourceKey);
+                
+                if (isExpanded) {
+                    // Collapse
+                    chartContainer.classList.remove('chart-expanded');
+                    this.expandedCharts.delete(resourceKey);
+                } else {
+                    // Expand
+                    chartContainer.classList.add('chart-expanded');
+                    this.expandedCharts.add(resourceKey);
+                }
+                
+                // Resize chart after animation completes
+                setTimeout(() => {
+                    const chart = this.charts.get(chartId);
+                    if (chart) {
+                        chart.resize();
+                    }
+                }, 300); // Match CSS transition duration
+            }
+
+            // Helper function to get chart ID by resource key
+            getChartIdByResourceKey(resourceKey) {
+                const resourceType = CONFIG.RESOURCE_TYPES.find(type => type.key === resourceKey);
+                return resourceType ? resourceType.chartId : null;
+            }
+
+            // Generate distinct colors for chart series
+            generateColors(count) {
+                const colors = [];
+                for (let i = 0; i < count; i++) {
+                    const hue = (i * 360 / count) % 360;
+                    colors.push({
+                        line: `hsl(${hue}, 70%, 50%)`,
+                        fill: `hsl(${hue}, 70%, 80%)`
                     });
                 }
-
-                chartLabels = Object.keys(monthlyDataProcessed).sort();
-                chartOilData = chartLabels.map(key => monthlyDataProcessed[key].oil);
-                chartGasData = chartLabels.map(key => monthlyDataProcessed[key].gas);
-
-            } else { // Yearly mode
-                chartTitle = "Yearly Production Breakdown";
-                xAxisTitle = "Year";
-                if (showDailyAverages) { yAxisTitle = `Avg Daily Volume (Gas: Mill Sm³/day, Oil: kSm³/day)`; }
-                else { yAxisTitle = `Total Volume (Gas: Mill Sm³/yr, Oil: kSm³/yr)`; } // Corrected yearly total units
-
-                const yearlyTotals = {};
-                sortedKeysInPeriod.forEach(key => {
-                    const year = dataForPeriod[key].year;
-                    if (!yearlyTotals[year]) yearlyTotals[year] = { oil: 0, gas: 0, yearDate: parseDateYYYYMM(`${year}-01`) };
-                    yearlyTotals[year].oil += dataForPeriod[key].oil; // Mill Sm³/yr
-                    yearlyTotals[year].gas += dataForPeriod[key].gas; // Bill Sm³/yr
-                });
-
-                chartLabels = Object.keys(yearlyTotals).sort();
-                chartOilData = chartLabels.map(year => {
-                    const originalOil = yearlyTotals[year].oil;
-                    const daysInYear = _isLeapYear(yearlyTotals[year].yearDate) ? 366 : 365;
-                    const divisor = showDailyAverages ? daysInYear : 1;
-                    // Oil: Mill Sm³/yr -> kSm³/yr|day
-                    return (originalOil * 1000) / divisor;
-                });
-                chartGasData = chartLabels.map(year => {
-                    const originalGas = yearlyTotals[year].gas;
-                    const daysInYear = _isLeapYear(yearlyTotals[year].yearDate) ? 366 : 365;
-                    const divisor = showDailyAverages ? daysInYear : 1;
-                     // Gas: Bill Sm³/yr -> Mill Sm³/yr|day
-                    return (originalGas * 1000) / divisor;
-                });
+                return colors;
             }
 
-            document.getElementById('diveInChartTitle').textContent = chartTitle;
+            // Generate chart title based on resource type and unit system
+            getChartTitle(resourceName, resourceType, unit) {
+                return `${resourceName} Production by Field (${unit})`;
+            }
 
-            // --- Render Chart & Store Config ---
-            const ctx = yearlyFieldChartCanvas.getContext('2d');
-            if (yearlyFieldChartInstance) yearlyFieldChartInstance.destroy();
-
-            diveInChartConfig = { // Store config for modal
-                type: 'bar',
-                data: {
-                    labels: chartLabels,
-                    datasets: [
-                        { label: `Gas (Mill Sm³${dailySuffix})`, data: chartGasData, backgroundColor: 'rgba(255, 99, 132, 0.7)' },
-                        { label: `Oil (kSm³${dailySuffix})`, data: chartOilData, backgroundColor: 'rgba(54, 162, 235, 0.7)' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { tooltip: { mode: 'index' } },
-                    scales: {
-                        x: { stacked: true, title: { display: true, text: xAxisTitle } },
-                        y: { stacked: true, beginAtZero: true, title: { display: true, text: yAxisTitle } }
-                    }
-                }
-            };
-
-            yearlyFieldChartInstance = new Chart(ctx, diveInChartConfig);
-            fieldDiveInArea.classList.remove('hidden');
-        }
-
-
-        // --- Update Orchestration ---
-        function updateDashboard(options = { preserveKpiMonth: false }) {
-            // (Keep implementation from previous version)
-            console.log("Updating dashboard...");
-            errorDiv.classList.add('hidden');
-
-            try {
-                const processedData = filterAndProcessData();
-                if (!processedData) throw new Error("No data processed or available for filters.");
-
-                if (!options.preserveKpiMonth || !kpiReferenceDateKey || !processedData.sortedDateKeys.includes(kpiReferenceDateKey)) {
-                    kpiReferenceDateKey = processedData.sortedDateKeys[processedData.sortedDateKeys.length - 1] || null;
-                }
-
-                const kpiResults = calculateAnalyticalKPIs(
-                    processedData.fieldData,
-                    kpiReferenceDateKey,
-                    processedData.sortedDateKeys
-                );
-
-                renderKPIs(kpiResults);
-                renderProductionChart(processedData.mainChartTimeSeries);
-
-                let currentDiveInField = diveInFieldSelect.value;
-                if (!currentDiveInField && uniqueFields.length > 0) {
-                     const topMover = kpiResults.biggestMovers[0]?.name;
-                     currentDiveInField = topMover || uniqueFields[0] || "";
-                     diveInFieldSelect.value = currentDiveInField;
-                }
-
-                if (currentDiveInField) {
-                     renderFieldDiveIn(currentDiveInField);
+            // Generate chart subtitle based on selected companies
+            getChartSubtitle(selectedCompanyNames) {
+                if (selectedCompanyNames.length === 0) {
+                    return 'Total Field Production';
+                } else if (selectedCompanyNames.length === 1) {
+                    return selectedCompanyNames[0];
                 } else {
-                     fieldDiveInArea.classList.add('hidden');
+                    return selectedCompanyNames.join(' • ');
                 }
-
-            } catch (error) {
-                console.error("Error updating dashboard:", error);
-                errorDiv.textContent = `Error updating dashboard: ${error.message}`;
-                errorDiv.classList.remove('hidden');
-                statusDiv.classList.add('hidden');
-                kpiContainer.innerHTML = '<div class="kpi-card col-span-full"><div class="kpi-title text-red-500">Error updating data.</div></div>';
-                renderProductionChart(null); /* populateTable(null); */ fieldDiveInArea.classList.add('hidden');
             }
-        }
 
-
-        // --- Event Listeners --- (Attached in DOMContentLoaded)
-
-        // --- Drag & Drop Handlers --- (Attached in DOMContentLoaded)
-
-        // --- Initial Load ---
-        function displayDashboardOnInit(csvText, source) {
-             // (Keep implementation from previous version)
-             try {
-                statusDiv.textContent = `Parsing data from ${source}...`;
-                statusDiv.classList.remove('hidden');
-                parseRawData(csvText);
-                renderFieldFilter();
-                renderDiveInFieldSelect();
-                dashboardContent.classList.remove('hidden');
-                dropZone.classList.add('hidden');
-                updateDashboard({ preserveKpiMonth: false });
-                statusDiv.textContent = `Successfully loaded data from ${source}.`;
-                statusDiv.className = 'mb-4 p-3 bg-green-100 text-green-800 rounded text-sm';
-                errorDiv.classList.add('hidden');
-                setTimeout(() => { statusDiv.classList.add('hidden'); }, 2500);
-            } catch (error) {
-                console.error(`Initial processing error from ${source}:`, error);
-                statusDiv.classList.add('hidden');
-                errorDiv.textContent = `Error processing initial data: ${error.message}`;
-                errorDiv.classList.remove('hidden');
-                dashboardContent.classList.add('hidden');
-                dropZone.classList.remove('hidden');
-                csvDownloadLink.href = csvUrl;
+            // Handle single click on legend item (default toggle behavior)
+            handleLegendSingleClick(chart, datasetIndex) {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                meta.hidden = meta.hidden === null ? !chart.data.datasets[datasetIndex].hidden : null;
+                chart.update();
             }
-        }
 
-        // Removed initialUrlLoad function
+            // Handle double-click on legend item (show only this item)
+            handleLegendDoubleClick(chart, datasetIndex) {
+                const datasets = chart.data.datasets;
+                
+                // Check if currently showing only the double-clicked item
+                const visibleDatasets = datasets.filter((_, index) => {
+                    const meta = chart.getDatasetMeta(index);
+                    return meta.hidden !== true;
+                });
+                
+                const isShowingOnlyClickedItem = visibleDatasets.length === 1 && 
+                                               chart.getDatasetMeta(datasetIndex).hidden !== true;
+                
+                if (isShowingOnlyClickedItem) {
+                    // Show all datasets
+                    datasets.forEach((_, index) => {
+                        const meta = chart.getDatasetMeta(index);
+                        meta.hidden = false;
+                    });
+                } else {
+                    // Hide all except the clicked one
+                    datasets.forEach((_, index) => {
+                        const meta = chart.getDatasetMeta(index);
+                        meta.hidden = index !== datasetIndex;
+                    });
+                }
+                
+                chart.update();
+            }
 
-        // Helper to re-attach dive-in listeners
-        function attachDiveInListeners() {
-             const select = document.getElementById('diveInFieldSelect');
-             const toggle = document.getElementById('diveInChartToggle');
-             const dailyCheck = document.getElementById('showDailyToggle');
+            // Create custom tooltip for enhanced data display
+            createCustomTooltip(unit, resourceType, selectedCompanies) {
+                return {
+                    enabled: false,
+                    external: (context) => {
+                        let tooltipEl = document.getElementById('chartjs-tooltip');
+                        if (!tooltipEl) {
+                            tooltipEl = document.createElement('div');
+                            tooltipEl.id = 'chartjs-tooltip';
+                            tooltipEl.style.cssText = `
+                                position: absolute; background: rgba(0, 0, 0, 0.9); color: white;
+                                padding: 12px 16px; border-radius: 8px; font-size: 13px;
+                                pointer-events: none; z-index: 1000; line-height: 1.4; max-width: 300px;
+                                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                            `;
+                            document.body.appendChild(tooltipEl);
+                        }
 
-             const selectHandler = (event) => renderFieldDiveIn(event.target.value);
-             const toggleHandler = (event) => {
-                 if (event.target.tagName === 'BUTTON') {
-                     const newMode = event.target.dataset.mode;
-                     if (newMode && newMode !== diveInChartMode) {
-                         diveInChartMode = newMode;
-                         renderFieldDiveIn(document.getElementById('diveInFieldSelect').value);
-                     }
-                 }
-             };
-             const dailyCheckHandler = (event) => {
-                 showDailyAverages = event.target.checked;
-                 renderFieldDiveIn(document.getElementById('diveInFieldSelect').value);
-             };
+                        const tooltipModel = context.tooltip;
+                        if (tooltipModel.opacity === 0) {
+                            tooltipEl.style.opacity = 0;
+                            return;
+                        }
 
-             // Use more robust listener attachment/detachment
-             if (select) {
-                 select.removeEventListener('change', selectHandler); // Remove potential old listener
-                 select.addEventListener('change', selectHandler);
-             }
-             if (toggle) {
-                 toggle.removeEventListener('click', toggleHandler);
-                 toggle.addEventListener('click', toggleHandler);
-             }
-             if (dailyCheck) {
-                  dailyCheck.removeEventListener('change', dailyCheckHandler);
-                  dailyCheck.addEventListener('change', dailyCheckHandler);
-             }
-        }
+                        if (tooltipModel.body) {
+                            this.renderTooltipContent(tooltipEl, context, unit, resourceType, selectedCompanies);
+                        }
 
+                        const position = context.chart.canvas.getBoundingClientRect();
+                        tooltipEl.style.opacity = 1;
+                        tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+                    }
+                };
+            }
 
-        // --- Run Initial Load & Attach Listeners ---
-        document.addEventListener('DOMContentLoaded', () => {
-             // Set download link href immediately
-             csvDownloadLink.href = csvUrl;
+            // Render tooltip content with company breakdown
+            renderTooltipContent(tooltipEl, context, unit, resourceType, selectedCompanies) {
+                const dataPoint = context.tooltip.dataPoints[0];
+                const monthLabel = dataPoint.label;
+                const fieldName = dataPoint.dataset.label;
+                const fieldValue = dataPoint.raw;
+                
+                // Calculate total for this month
+                const chart = context.chart;
+                const monthIndex = dataPoint.dataIndex;
+                let total = 0;
+                chart.data.datasets.forEach(dataset => {
+                    total += dataset.data[monthIndex] || 0;
+                });
 
-             // Ensure modal is hidden initially
-             chartModal.classList.add('hidden');
-             chartModal.style.display = 'none';
+                const date = new Date(monthLabel + '-01');
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
 
-             // Filter Panel Toggle Listeners
-             burgerButton.addEventListener('click', (e) => { e.stopPropagation(); toggleFilterPanel(true); });
-             closeFilterButton.addEventListener('click', () => toggleFilterPanel(false));
-             filterOverlay.addEventListener('click', () => toggleFilterPanel(false));
-             filterPanel.addEventListener('click', (e) => e.stopPropagation());
-
-             // Filter Control Listeners (Main Filters)
-             fieldFilterSelect.addEventListener('change', () => updateDashboard({ preserveKpiMonth: false }));
-             startDateInput.addEventListener('change', () => updateDashboard({ preserveKpiMonth: false }));
-             endDateInput.addEventListener('change', () => updateDashboard({ preserveKpiMonth: false }));
-             resetFiltersButton.addEventListener('click', () => {
-                 fieldFilterSelect.selectedIndex = -1;
-                 setInitialDateRange();
-                 summarizeYearlyCheckbox.checked = false;
-                 summarizeYearly = false;
-                 kpiReferenceDateKey = null;
-                 datePresetButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                 datePresetButtonsContainer.querySelector('button[data-range="all"]')?.classList.add('active');
-                 diveInFieldSelect.value = "";
-                 diveInChartMode = 'monthly';
-                 showDailyAverages = false;
-                 showDailyToggleCheckbox.checked = false;
-                 updateDashboard({ preserveKpiMonth: false });
-             });
-
-            // Attach Dive-In Listeners initially
-            attachDiveInListeners();
-
-
-             // Chart Control Listeners
-             datePresetButtonsContainer.addEventListener('click', (event) => {
-                 if (event.target.tagName === 'BUTTON' && fullDataEndDate) {
-                     const range = event.target.getAttribute('data-range');
-                     datePresetButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                     event.target.classList.add('active');
-                     let newStartDate = fullDataStartDate;
-                     const currentEndDate = parseDateYYYYMM(endDateInput.value) || fullDataEndDate;
-                     if (range === '1y') newStartDate = subYears(currentEndDate, 1);
-                     else if (range === '5y') newStartDate = subYears(currentEndDate, 5);
-                     else if (range === '10y') newStartDate = subYears(currentEndDate, 10);
-                     if (!isValidDate(newStartDate) || isBefore(newStartDate, fullDataStartDate)) {
-                         newStartDate = fullDataStartDate;
-                     }
-                     startDateInput.value = formatDateYYYYMM(newStartDate);
-                     endDateInput.value = formatDateYYYYMM(currentEndDate);
-                     updateDashboard({ preserveKpiMonth: false });
-                 }
-             });
-             summarizeYearlyCheckbox.addEventListener('change', (event) => {
-                 summarizeYearly = event.target.checked;
-                 updateDashboard({ preserveKpiMonth: true });
-             });
-
-             // KPI Navigation Listeners
-             prevKpiMonthButton.addEventListener('click', () => {
-                 const currentIndex = currentSortedDateKeys.indexOf(kpiReferenceDateKey);
-                 if (currentIndex > 0) {
-                     kpiReferenceDateKey = currentSortedDateKeys[currentIndex - 1];
-                     updateDashboard({ preserveKpiMonth: true });
-                 }
-             });
-             nextKpiMonthButton.addEventListener('click', () => {
-                 const currentIndex = currentSortedDateKeys.indexOf(kpiReferenceDateKey);
-                 if (currentIndex >= 0 && currentIndex < currentSortedDateKeys.length - 1) {
-                     kpiReferenceDateKey = currentSortedDateKeys[currentIndex + 1];
-                     updateDashboard({ preserveKpiMonth: true });
-                 }
-             });
-
-            // KPI Click Listener (Event Delegation)
-            kpiContainer.addEventListener('click', (event) => {
-                const target = event.target.closest('.clickable-field-name'); // Find the clickable span
-                if (target) {
-                    const fieldName = target.dataset.fieldName;
-                    if (fieldName && uniqueFields.includes(fieldName)) {
-                        console.log(`KPI field clicked: ${fieldName}`);
-                        diveInFieldSelect.value = fieldName; // Update dropdown
-                        renderFieldDiveIn(fieldName); // Update dive-in section
+                let companyBreakdownHtml = '';
+                let fieldProductionValue = 0;
+                let companyTotalProduction = 0;
+                
+                // Show company breakdown only if companies are selected
+                if (selectedCompanies.length > 0) {
+                    const fieldId = this.dataManager.metadata.fieldIds.get(fieldName);
+                    
+                    if (fieldId) {
+                        // Get field production (without equity applied)
+                        const productionRow = this.dataManager.getProductionForFieldMonth(fieldId, monthLabel);
+                        if (productionRow && this.productionProcessor) {
+                            const rawFieldProduction = this.productionProcessor.getResourceProduction(productionRow, resourceType);
+                            const year = parseInt(productionRow.prfYear);
+                            const month = parseInt(productionRow.prfMonth);
+                            const unitSystem = document.getElementById('unitSelect').value;
+                            fieldProductionValue = this.productionProcessor.convertProduction(rawFieldProduction, resourceType, unitSystem, year, month);
+                        }
+                        
+                        // Calculate company equity breakdown
+                        const { breakdown, totalSelectedEquity } = this.equityCalculator.getEquityBreakdown(
+                            fieldId, monthLabel, selectedCompanies
+                        );
+                        
+                        if (totalSelectedEquity > 0) {
+                            companyBreakdownHtml = Object.entries(breakdown)
+                                .map(([companyName, equity]) => {
+                                    const absolutePercentage = (equity * 100).toFixed(4);
+                                    return `<div style="margin-top: 4px; font-size: 12px; opacity: 0.9;">${companyName}: ${absolutePercentage}%</div>`;
+                                })
+                                .join('');
+                        }
+                        
+                        // Calculate total company production across all fields for this month
+                        companyTotalProduction = this.calculateCompanyTotalProduction(selectedCompanies, monthLabel, resourceType);
                     }
                 }
-            });
 
+                const productionLabel = selectedCompanies.length === 0 ? 'Total production' : 'Production share';
+                const companyLabel = selectedCompanies.length > 1 ? 'Companies total' : 'Company total';
+                const fractionLabel = selectedCompanies.length > 1 ? 'companies total' : 'company total';
+                
+                // Calculate percentage of company total
+                const companyTotalPercentage = companyTotalProduction > 0 ? 
+                    ((fieldValue / companyTotalProduction) * 100).toFixed(1) : '0.0';
 
-             // Table Toggle Listener (Deferred Population)
-             toggleTableButton.addEventListener('click', () => {
-                 if (!isTablePopulated) {
-                     populateTable();
-                 }
-                 const isHidden = tableWrapper.classList.toggle('hidden');
-                 toggleTableButton.textContent = isHidden ? 'Show Raw Data Table' : 'Hide Raw Data Table';
-             });
+                let tooltipContent = `
+                    <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">
+                        <strong>${fieldName}</strong> - ${formattedDate}
+                    </div>`;
 
-             // File Input Handling (Browse Button and Drop Zone)
-             function handleFile(file) {
-                 if (file && (file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv'))) {
-                     statusDiv.textContent = `Reading file: ${file.name}...`;
-                     statusDiv.classList.remove('hidden');
-                     errorDiv.classList.add('hidden');
-                     const reader = new FileReader();
-                     reader.onload = (e_onload) => {
-                         displayDashboardOnInit(e_onload.target.result, 'File Upload');
-                         fileInput.value = null;
-                     };
-                     reader.onerror = (e_onerror) => { /* ... error handling ... */ };
-                     reader.readAsText(file);
-                 } else if (file) { /* ... handle wrong file type ... */ }
-             }
+                if (selectedCompanies.length > 0) {
+                    tooltipContent += `
+                        <div style="margin-bottom: 4px;">Field production: ${fieldProductionValue.toFixed(1)} ${unit}</div>
+                        ${companyBreakdownHtml}
+                        <div style="margin-top: 8px; margin-bottom: 4px;">${productionLabel}: ${fieldValue.toFixed(1)} ${unit}</div>
+                        <div style="margin-bottom: 4px;">${companyLabel}: ${companyTotalProduction.toFixed(1)} ${unit}</div>
+                        <div style="margin-bottom: 4px;">${productionLabel} / ${fractionLabel}: ${companyTotalPercentage}%</div>`;
+                } else {
+                    tooltipContent += `
+                        <div style="margin-bottom: 4px;">${productionLabel}: ${fieldValue.toFixed(1)} ${unit}</div>
+                        <div style="margin-bottom: 8px;">Monthly total: ${total.toFixed(1)} ${unit}</div>`;
+                }
 
-             browseButton.addEventListener('click', () => { fileInput.click(); });
-             fileInput.addEventListener('change', (event) => { handleFile(event.target.files[0]); });
-             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-             dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
-             dropZone.addEventListener('drop', (e) => {
-                 e.preventDefault(); dropZone.classList.remove('dragover');
-                 if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-             });
+                tooltipEl.innerHTML = tooltipContent;
+            }
 
-             // Modal Chart Logic
-             const modalOverlayElem = document.getElementById('modalOverlayElem'); // Use specific ID from HTML
+            // Calculate total company production across all fields for a specific month
+            calculateCompanyTotalProduction(selectedCompanies, monthLabel, resourceType) {
+                let totalProduction = 0;
+                const unitSystem = document.getElementById('unitSelect').value;
+                
+                if (!this.productionProcessor) return 0;
+                
+                // Get all unique fields that the selected companies have equity in
+                const allCompanyFields = new Set();
+                selectedCompanies.forEach(companyId => {
+                    const companyFields = this.dataManager.indices.companyFields.get(companyId);
+                    if (companyFields) {
+                        companyFields.forEach(fieldId => allCompanyFields.add(fieldId));
+                    }
+                });
+                
+                // Calculate production for each field
+                allCompanyFields.forEach(fieldId => {
+                    const productionRow = this.dataManager.getProductionForFieldMonth(fieldId, monthLabel);
+                    if (productionRow) {
+                        // Calculate total equity for selected companies in this field
+                        let totalSelectedEquity = 0;
+                        selectedCompanies.forEach(companyId => {
+                            totalSelectedEquity += this.equityCalculator.getCompanyEquity(fieldId, monthLabel, companyId);
+                        });
+                        
+                        if (totalSelectedEquity > 0) {
+                            const rawProduction = this.productionProcessor.getResourceProduction(productionRow, resourceType);
+                            const equityProduction = rawProduction * totalSelectedEquity;
+                            const year = parseInt(productionRow.prfYear);
+                            const month = parseInt(productionRow.prfMonth);
+                            const convertedProduction = this.productionProcessor.convertProduction(equityProduction, resourceType, unitSystem, year, month);
+                            totalProduction += convertedProduction;
+                        }
+                    }
+                });
+                
+                return totalProduction;
+            }
 
-             function openChartModal(chartConfig) {
-                 if (!chartConfig) {
-                     console.error("Cannot open modal: chart config is missing.");
-                     return;
-                 }
-                 console.log("Opening modal with config:", chartConfig);
+            // Create or update a chart with new data
+            createChart(chartId, resourceName, unit, labels, datasets, resourceType, selectedCompanies) {
+                const canvas = document.getElementById(chartId);
+                const ctx = canvas.getContext('2d');
+                
+                // Ensure canvas takes full container size
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                
+                if (this.charts.has(chartId)) {
+                    this.charts.get(chartId).destroy();
+                }
 
-                 chartModal.style.display = 'flex';
-                 chartModal.classList.remove('hidden');
+                // Track clicks for double-click detection
+                let clickTimeout = null;
+                let lastClickTime = 0;
+                let lastClickedIndex = -1;
 
-                 setTimeout(() => {
-                     const ctx = modalChartCanvas.getContext('2d');
-                     if (!ctx) {
-                         console.error("Cannot get modal canvas context.");
-                         chartModal.classList.add('hidden');
-                         chartModal.style.display = 'none';
-                         return;
-                     }
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: false },
+                            legend: { 
+                                display: true, 
+                                position: 'top', 
+                                labels: { boxWidth: 12 },
+                                onClick: (event, legendItem, legend) => {
+                                    const currentTime = Date.now();
+                                    const timeDiff = currentTime - lastClickTime;
+                                    const datasetIndex = legendItem.datasetIndex;
+                                    
+                                    // Clear any existing timeout
+                                    if (clickTimeout) {
+                                        clearTimeout(clickTimeout);
+                                        clickTimeout = null;
+                                    }
+                                    
+                                    // Check for double-click (within 300ms and same item)
+                                    if (timeDiff < 300 && lastClickedIndex === datasetIndex) {
+                                        // Double-click detected
+                                        this.handleLegendDoubleClick(chart, datasetIndex);
+                                    } else {
+                                        // Single click - set timeout to handle if no second click comes
+                                        clickTimeout = setTimeout(() => {
+                                            this.handleLegendSingleClick(chart, datasetIndex);
+                                            clickTimeout = null;
+                                        }, 300);
+                                    }
+                                    
+                                    lastClickTime = currentTime;
+                                    lastClickedIndex = datasetIndex;
+                                }
+                            },
+                            tooltip: this.createCustomTooltip(unit, resourceType, selectedCompanies)
+                        },
+                        scales: {
+                            x: { display: true, title: { display: true, text: 'Month' } },
+                            y: { 
+                                display: true, 
+                                title: { display: true, text: `Production (${unit})` },
+                                beginAtZero: true, 
+                                stacked: true 
+                            }
+                        },
+                        elements: { line: { tension: 0.1 } },
+                        interaction: { mode: 'nearest', intersect: false }
+                    }
+                });
 
-                     if (modalChartInstance) {
-                         modalChartInstance.destroy();
-                     }
+                this.charts.set(chartId, chart);
+            }
 
-                     const modalOptions = JSON.parse(JSON.stringify(chartConfig.options));
-                     modalOptions.maintainAspectRatio = false;
+            // Update all charts with new production data
+            updateCharts(productionData, selectedCompanies, selectedCompanyNames, unitSystem, productionProcessor) {
+                // Store reference for use in tooltips
+                this.productionProcessor = productionProcessor;
+                
+                CONFIG.RESOURCE_TYPES.forEach(resourceType => {
+                    const fieldData = productionData[resourceType.key];
+                    
+                    // Sort fields by total production
+                    const fieldTotals = {};
+                    Object.keys(fieldData).forEach(fieldName => {
+                        fieldTotals[fieldName] = Object.values(fieldData[fieldName]).reduce((sum, val) => sum + val, 0);
+                    });
+                    const sortedFields = Object.keys(fieldData).sort((a, b) => fieldTotals[b] - fieldTotals[a]);
 
-                     try {
-                         modalChartInstance = new Chart(ctx, {
-                             type: chartConfig.type,
-                             data: JSON.parse(JSON.stringify(chartConfig.data)),
-                             options: modalOptions
-                         });
-                         console.log("Modal chart created:", modalChartInstance);
-                     } catch (error) {
-                         console.error("Error creating modal chart:", error);
-                         closeChartModal();
-                     }
-                 }, 50);
-             }
+                    // Prepare chart data
+                    const allMonths = [...new Set(
+                        Object.values(fieldData).flatMap(months => Object.keys(months))
+                    )].sort();
 
-             function closeChartModal() {
-                 console.log("Closing modal...");
-                 if (modalChartInstance) {
-                     modalChartInstance.destroy();
-                     modalChartInstance = null;
-                     console.log("Modal chart instance destroyed.");
-                 }
-                 chartModal.classList.add('hidden');
-                 chartModal.style.display = 'none';
-                 console.log("Modal hidden.");
-             }
+                    const colors = this.generateColors(sortedFields.length);
+                    const datasets = sortedFields.map((fieldName, index) => ({
+                        label: fieldName,
+                        data: allMonths.map(month => fieldData[fieldName][month] || 0),
+                        borderColor: colors[index].line,
+                        backgroundColor: colors[index].fill,
+                        fill: true
+                    }));
 
-             // Add listeners for expand buttons
-             document.querySelectorAll('.expand-button').forEach(button => {
-                 button.addEventListener('click', (e) => {
-                     const chartType = e.currentTarget.dataset.chartType;
-                     console.log(`Expand button clicked for: ${chartType}`);
-                     if (chartType === 'main' && mainChartConfig) {
-                         openChartModal(mainChartConfig);
-                     } else if (chartType === 'dive' && diveInChartConfig) {
-                         openChartModal(diveInChartConfig);
-                     } else {
-                         console.warn("No chart config found for:", chartType);
-                     }
-                 });
-             });
+                    const unit = productionProcessor.getUnitLabel(resourceType.key, unitSystem);
+                    const chartTitle = this.getChartTitle(resourceType.name, resourceType.key, unit);
+                    const chartSubtitle = this.getChartSubtitle(selectedCompanyNames);
+                    
+                    // Update chart titles
+                    document.getElementById(resourceType.titleId).textContent = chartTitle;
+                    document.getElementById(resourceType.subtitleId).textContent = chartSubtitle;
+                    
+                    this.createChart(
+                        resourceType.chartId, 
+                        resourceType.name, 
+                        unit, 
+                        allMonths, 
+                        datasets, 
+                        resourceType.key,
+                        selectedCompanies
+                    );
+                });
+            }
+        }
 
-             // Add listeners for closing modal
-             closeModalButton.addEventListener('click', closeChartModal);
-             modalOverlayElem.addEventListener('click', closeChartModal);
+        // ===================================================================
+        // MAIN APPLICATION CLASS - Orchestrates all components
+        // ===================================================================
 
+        class ProductionAnalysisApp {
+            constructor() {
+                this.eventBus = new EventBus();
+                this.dataManager = new DataManager(this.eventBus);
+                this.equityCalculator = new EquityCalculator(this.dataManager);
+                this.productionProcessor = new ProductionProcessor(this.dataManager, this.equityCalculator);
+                this.uiManager = new UIManager(this.eventBus, this.dataManager);
+                this.chartManager = new ChartManager(this.eventBus, this.dataManager, this.equityCalculator);
+                
+                this.setupEventListeners();
+                this.initializeFileUploads();
+                window.chartManager = this.chartManager;
+            }
 
-             // No initial URL load, page starts with drop zone visible.
-             // statusDiv.textContent = "Please load data using the options below.";
-             // statusDiv.classList.remove('hidden'); // Keep status hidden initially
+            // Set up event listeners for inter-component communication
+            setupEventListeners() {
+                this.eventBus.on('dataLoaded', (data) => {
+                    // Check if both datasets are loaded
+                    if (this.dataManager.isDataReady()) {
+                        this.addStatusMessage('Both datasets loaded successfully! Initializing analysis interface...', 'success');
+                        setTimeout(() => {
+                            this.onDataReady();
+                        }, 1000);
+                    }
+                });
 
-        });
+                this.eventBus.on('companiesSelected', (data) => {
+                    this.updateAnalysis();
+                });
 
+                // Set up UI control event listeners
+                document.getElementById('unitSelect').addEventListener('change', () => {
+                    this.updateAnalysis();
+                });
+
+                document.getElementById('startDate').addEventListener('change', () => {
+                    this.onDateRangeChanged();
+                });
+
+                document.getElementById('endDate').addEventListener('change', () => {
+                    this.onDateRangeChanged();
+                });
+            }
+
+            // Handle when both datasets are loaded and ready
+            onDataReady() {
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('analysisSection').classList.remove('hidden');
+                
+                this.initializeInterface();
+            }
+
+            // Initialize the analysis interface with default values
+            initializeInterface() {
+                this.uiManager.initializeMultiSelect();
+                
+                // Set default date range (last 2 years)
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setFullYear(endDate.getFullYear() - 2);
+                
+                document.getElementById('startDate').value = formatDate(startDate);
+                document.getElementById('endDate').value = formatDate(endDate);
+
+                this.onDateRangeChanged();
+            }
+
+            // Handle date range changes and update available companies
+            onDateRangeChanged() {
+                const startDate = new Date(document.getElementById('startDate').value);
+                const endDate = new Date(document.getElementById('endDate').value);
+                
+                const dateChanged = this.dataManager.updateDateRange(startDate, endDate);
+                if (dateChanged) {
+                    this.equityCalculator.clearCache();
+                    this.updateAvailableCompanies();
+                    this.updateAnalysis();
+                }
+            }
+
+            // Update list of available companies based on current data
+            updateAvailableCompanies() {
+                const companiesWithProduction = this.dataManager.getCompaniesWithProduction();
+                this.eventBus.emit('companiesUpdated', { companies: companiesWithProduction });
+            }
+
+            // Main analysis function that processes data and updates charts
+            updateAnalysis() {
+                const selectedCompanies = this.uiManager.getSelectedCompanyIds();
+                const selectedCompanyNames = this.uiManager.getSelectedCompanyNames();
+                const unitSystem = document.getElementById('unitSelect').value;
+                
+                // Process production data
+                const productionData = this.productionProcessor.processProductionData(selectedCompanies, unitSystem);
+                
+                // Update charts
+                this.chartManager.updateCharts(
+                    productionData, 
+                    selectedCompanies, 
+                    selectedCompanyNames, 
+                    unitSystem, 
+                    this.productionProcessor
+                );
+            }
+
+            // File type detection based on column headers
+            detectFileType(headers) {
+                const productionColumns = ['prfYear', 'prfMonth', 'prfNpdidInformationCarrier', 'prfPrdOilNetMillSm3'];
+                const licenseeColumns = ['fldNpdidField', 'cmpNpdidCompany', 'fldLicenseeFrom', 'fldLicenseeTo'];
+                
+                const hasProductionColumns = productionColumns.every(col => headers.includes(col));
+                const hasLicenseeColumns = licenseeColumns.every(col => headers.includes(col));
+                
+                if (hasProductionColumns) return 'production';
+                if (hasLicenseeColumns) return 'licensee';
+                return 'unknown';
+            }
+
+            // Update pill status
+            updatePillStatus(fileType, isLoaded) {
+                const pillId = fileType === 'production' ? 'productionPill' : 'licenseePill';
+                const pill = document.getElementById(pillId);
+                
+                if (isLoaded) {
+                    pill.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-300';
+                    pill.innerHTML = pill.innerHTML.replace('fa-file-csv', 'fa-check-circle');
+                } else {
+                    pill.className = 'px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border border-gray-300';
+                    pill.innerHTML = pill.innerHTML.replace('fa-check-circle', 'fa-file-csv');
+                }
+            }
+
+            // Add status message
+            addStatusMessage(message, type = 'info') {
+                const statusContainer = document.getElementById('uploadStatus');
+                const statusDiv = document.createElement('div');
+                
+                let iconClass, textClass, bgClass, borderClass;
+                switch (type) {
+                    case 'success':
+                        iconClass = 'fas fa-check-circle text-green-500';
+                        textClass = 'text-green-700';
+                        bgClass = 'bg-green-50';
+                        borderClass = 'border-green-200';
+                        break;
+                    case 'error':
+                        iconClass = 'fas fa-exclamation-circle text-red-500';
+                        textClass = 'text-red-700';
+                        bgClass = 'bg-red-50';
+                        borderClass = 'border-red-200';
+                        break;
+                    case 'warning':
+                        iconClass = 'fas fa-exclamation-triangle text-yellow-500';
+                        textClass = 'text-yellow-700';
+                        bgClass = 'bg-yellow-50';
+                        borderClass = 'border-yellow-200';
+                        break;
+                    default:
+                        iconClass = 'fas fa-info-circle text-blue-500';
+                        textClass = 'text-blue-700';
+                        bgClass = 'bg-blue-50';
+                        borderClass = 'border-blue-200';
+                }
+                
+                statusDiv.className = `flex items-center gap-2 p-3 rounded-md border ${bgClass} ${borderClass}`;
+                statusDiv.innerHTML = `
+                    <i class="${iconClass}"></i>
+                    <span class="text-sm ${textClass}">${message}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                
+                statusContainer.appendChild(statusDiv);
+                
+                // Auto-remove success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        if (statusDiv.parentElement) {
+                            statusDiv.remove();
+                        }
+                    }, 5000);
+                }
+            }
+
+            // Clear status messages
+            clearStatusMessages() {
+                document.getElementById('uploadStatus').innerHTML = '';
+            }
+
+            // Initialize multi-file upload functionality
+            initializeFileUploads() {
+                const dropZone = document.getElementById('multiDropZone');
+                const fileInput = document.getElementById('multiFileInput');
+
+                dropZone.addEventListener('click', () => fileInput.click());
+                
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+                
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    const files = Array.from(e.dataTransfer.files);
+                    this.handleMultipleFiles(files);
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    const files = Array.from(e.target.files);
+                    this.handleMultipleFiles(files);
+                });
+            }
+
+            // Handle multiple file uploads
+            async handleMultipleFiles(files) {
+                this.clearStatusMessages();
+                
+                if (files.length === 0) {
+                    this.addStatusMessage('No files selected', 'warning');
+                    return;
+                }
+                
+                // Filter CSV files
+                const csvFiles = files.filter(file => file.name.toLowerCase().endsWith('.csv'));
+                const nonCsvFiles = files.filter(file => !file.name.toLowerCase().endsWith('.csv'));
+                
+                if (nonCsvFiles.length > 0) {
+                    this.addStatusMessage(`Skipped ${nonCsvFiles.length} non-CSV file(s): ${nonCsvFiles.map(f => f.name).join(', ')}`, 'warning');
+                }
+                
+                if (csvFiles.length === 0) {
+                    this.addStatusMessage('No CSV files found in selection', 'error');
+                    return;
+                }
+                
+                this.addStatusMessage(`Processing ${csvFiles.length} CSV file(s)...`, 'info');
+                
+                // Process each CSV file
+                for (const file of csvFiles) {
+                    await this.processSingleFile(file);
+                }
+            }
+
+            // Process a single CSV file
+            async processSingleFile(file) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        try {
+                            const csvText = e.target.result;
+                            const lines = csvText.trim().split('\n');
+                            
+                            if (lines.length < 2) {
+                                this.addStatusMessage(`${file.name}: File appears to be empty or has no data rows`, 'error');
+                                resolve();
+                                return;
+                            }
+                            
+                            // Parse headers
+                            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                            
+                            // Detect file type
+                            const fileType = this.detectFileType(headers);
+                            
+                            if (fileType === 'unknown') {
+                                this.addStatusMessage(`${file.name}: Could not determine file type from column headers. Expected production columns: prfYear, prfMonth, prfNpdidInformationCarrier, prfPrdOilNetMillSm3 OR licensee columns: fldNpdidField, cmpNpdidCompany, fldLicenseeFrom, fldLicenseeTo`, 'error');
+                                resolve();
+                                return;
+                            }
+                            
+                            // Parse full data
+                            const data = this.parseCSV(csvText);
+                            
+                            if (data.length === 0) {
+                                this.addStatusMessage(`${file.name}: No valid data rows found`, 'error');
+                                resolve();
+                                return;
+                            }
+                            
+                            // Load data based on type
+                            if (fileType === 'production') {
+                                if (this.dataManager.rawData.production) {
+                                    this.addStatusMessage(`${file.name}: Production data already loaded, replacing previous data`, 'warning');
+                                }
+                                this.dataManager.loadProductionData(data);
+                                this.updatePillStatus('production', true);
+                                this.addStatusMessage(`${file.name}: Production data loaded successfully (${data.length} records)`, 'success');
+                            } else if (fileType === 'licensee') {
+                                if (this.dataManager.rawData.licensee) {
+                                    this.addStatusMessage(`${file.name}: Licensee data already loaded, replacing previous data`, 'warning');
+                                }
+                                this.dataManager.loadLicenseeData(data);
+                                this.updatePillStatus('licensee', true);
+                                this.addStatusMessage(`${file.name}: Licensee data loaded successfully (${data.length} records)`, 'success');
+                            }
+                            
+                        } catch (error) {
+                            this.addStatusMessage(`${file.name}: Error parsing CSV - ${error.message}`, 'error');
+                        }
+                        
+                        resolve();
+                    };
+                    
+                    reader.onerror = () => {
+                        this.addStatusMessage(`${file.name}: Error reading file`, 'error');
+                        resolve();
+                    };
+                    
+                    reader.readAsText(file);
+                });
+            }
+
+            // Parse CSV text into array of objects
+            parseCSV(text) {
+                const lines = text.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const data = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] ? values[index].trim().replace(/"/g, '') : '';
+                    });
+                    data.push(row);
+                }
+                return data;
+            }
+
+            // ===================================================================
+            // DEBUG FUNCTION - Detailed analysis of equity calculations and production data
+            // ===================================================================
+            debugProduction(fieldId, companyId, year, month) {
+                console.log('='.repeat(80));
+                console.log(`DEBUG ANALYSIS: Field ${fieldId}, Company ${companyId}, ${year}-${month.toString().padStart(2, '0')}`);
+                console.log('='.repeat(80));
+                
+                // Validate inputs
+                if (!this.dataManager.isDataReady()) {
+                    console.log('❌ ERROR: Data not loaded yet');
+                    return;
+                }
+                
+                const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+                const targetDate = new Date(year, month - 1, 1);
+                
+                // Get field and company names
+                const fieldName = this.dataManager.getFieldName(fieldId);
+                const companyName = this.dataManager.getCompanyName(companyId);
+                
+                console.log(`📍 Field: ${fieldName || 'UNKNOWN'} (ID: ${fieldId})`);
+                console.log(`🏢 Company: ${companyName || 'UNKNOWN'} (ID: ${companyId})`);
+                console.log(`📅 Target Date: ${targetDate.toDateString()} (${monthKey})`);
+                console.log(`📊 Current Date Range: ${formatDate(this.dataManager.currentDateRange.startDate)} to ${formatDate(this.dataManager.currentDateRange.endDate)}`);
+                
+                // Check if target month is in current filtered range
+                const isInRange = isDateInRange(targetDate, this.dataManager.currentDateRange.startDate, this.dataManager.currentDateRange.endDate);
+                console.log(`✅ Month in filtered range: ${isInRange}`);
+                
+                if (!isInRange) {
+                    console.log('⚠️  WARNING: Target month is outside current date filter range');
+                }
+                
+                console.log('\n' + '─'.repeat(60));
+                console.log('LICENSE ANALYSIS');
+                console.log('─'.repeat(60));
+                
+                // Get all licenses for this field/company combination
+                const licenses = this.dataManager.getLicensesForFieldCompany(fieldId, companyId);
+                console.log(`📋 Found ${licenses.length} license(s) for this field/company combination:`);
+                
+                if (licenses.length === 0) {
+                    console.log('❌ No licenses found - company has no stake in this field');
+                    return;
+                }
+                
+                let totalEquity = 0;
+                let activeLicenseCount = 0;
+                
+                licenses.forEach((license, index) => {
+                    console.log(`\n📜 License ${index + 1}:`);
+                    console.log(`   Company Share: ${license.fldCompanyShare}%`);
+                    console.log(`   SDFI Share: ${license.fldSdfiShare}% ${license.fldSdfiShare === '' ? '(defaulting to 100%)' : ''}`);
+                    console.log(`   License From: ${license.fldLicenseeFrom || 'N/A'}`);
+                    console.log(`   License To: ${license.fldLicenseeTo || 'N/A'}`);
+                    
+                    // Parse license dates
+                    const fromDate = parseLicenseDate(license.fldLicenseeFrom) || new Date('1900-01-01');
+                    const toDate = parseLicenseDate(license.fldLicenseeTo) || new Date('2099-12-31');
+                    
+                    console.log(`   Parsed From: ${fromDate.toDateString()}`);
+                    console.log(`   Parsed To: ${toDate.toDateString()}`);
+                    
+                    // Check if license is active for target month
+                    const isActive = this.dataManager.isLicenseActiveForDate(license, targetDate);
+                    console.log(`   ✅ Active for ${monthKey}: ${isActive}`);
+                    
+                    if (isActive) {
+                        activeLicenseCount++;
+                        const licenseEquity = this.equityCalculator.calculateLicenseEquity(license.fldCompanyShare, license.fldSdfiShare);
+                        totalEquity += licenseEquity;
+                        
+                        console.log(`   💰 License Equity Calculation:`);
+                        console.log(`      (${license.fldCompanyShare || 0}/100) × (${license.fldSdfiShare || 100}/100) = ${licenseEquity.toFixed(6)}`);
+                    } else {
+                        console.log(`   ❌ License not active - outside date range`);
+                    }
+                });
+                
+                console.log(`\n📊 TOTAL COMPANY EQUITY: ${totalEquity.toFixed(6)} (${(totalEquity * 100).toFixed(4)}%)`);
+                console.log(`📈 Active Licenses: ${activeLicenseCount}/${licenses.length}`);
+                
+                // Compare with cached calculation
+                const cachedEquity = this.equityCalculator.getCompanyEquity(fieldId, monthKey, companyId);
+                console.log(`🔄 Cached Equity: ${cachedEquity.toFixed(6)}`);
+                console.log(`✅ Calculation Match: ${Math.abs(totalEquity - cachedEquity) < 0.000001}`);
+                
+                console.log('\n' + '─'.repeat(60));
+                console.log('PRODUCTION ANALYSIS');
+                console.log('─'.repeat(60));
+                
+                // Get production data for this field/month
+                const productionRow = this.dataManager.getProductionForFieldMonth(fieldId, monthKey);
+                
+                if (!productionRow) {
+                    console.log(`❌ No production data found for ${fieldName} in ${monthKey}`);
+                    return;
+                }
+                
+                console.log(`📈 Production Data for ${monthKey}:`);
+                console.log(`   Oil: ${productionRow.prfPrdOilNetMillSm3} million m³`);
+                console.log(`   Gas: ${productionRow.prfPrdGasNetBillSm3} billion m³`);
+                console.log(`   NGL: ${productionRow.prfPrdNGLNetMillSm3} million m³`);
+                console.log(`   Condensate: ${productionRow.prfPrdCondensateNetMillSm3} million m³`);
+                
+                // Calculate oil equivalent
+                const oilEquivalent = (parseFloat(productionRow.prfPrdOilNetMillSm3) || 0) + 
+                                     (parseFloat(productionRow.prfPrdGasNetBillSm3) || 0) + 
+                                     (parseFloat(productionRow.prfPrdNGLNetMillSm3) || 0) + 
+                                     (parseFloat(productionRow.prfPrdCondensateNetMillSm3) || 0);
+                
+                console.log(`   Oil Equivalent: ${oilEquivalent} million m³`);
+                
+                console.log('\n' + '─'.repeat(60));
+                console.log('COMPANY PRODUCTION SHARE CALCULATION');
+                console.log('─'.repeat(60));
+                
+                if (totalEquity > 0) {
+                    console.log(`💰 Company's Share Calculation:`);
+                    
+                    CONFIG.RESOURCE_TYPES.forEach(resourceType => {
+                        const rawProduction = this.productionProcessor.getResourceProduction(productionRow, resourceType.key);
+                        const companyShare = rawProduction * totalEquity;
+                        
+                        console.log(`\n📊 ${resourceType.name}:`);
+                        console.log(`   Field Total: ${rawProduction.toFixed(6)} million m³`);
+                        console.log(`   Company Equity: ${(totalEquity * 100).toFixed(4)}%`);
+                        console.log(`   Company Share: ${rawProduction.toFixed(6)} × ${totalEquity.toFixed(6)} = ${companyShare.toFixed(6)} million m³`);
+                        
+                        // Show unit conversions
+                        const year = parseInt(productionRow.prfYear);
+                        const month = parseInt(productionRow.prfMonth);
+                        
+                        ['si-monthly', 'si-daily', 'barrels-daily'].forEach(unitSystem => {
+                            const converted = this.productionProcessor.convertProduction(companyShare, resourceType.key, unitSystem, year, month);
+                            const unit = this.productionProcessor.getUnitLabel(resourceType.key, unitSystem);
+                            console.log(`   ${unitSystem}: ${converted.toFixed(2)} ${unit}`);
+                        });
+                    });
+                } else {
+                    console.log(`❌ No equity - company has no production share in this field for ${monthKey}`);
+                }
+                
+                console.log('\n' + '─'.repeat(60));
+                console.log('RELATIONSHIP VALIDATION');
+                console.log('─'.repeat(60));
+                
+                // Check field-company relationships
+                const fieldCompanies = this.dataManager.indices.fieldCompanies.get(fieldId);
+                const companyFields = this.dataManager.indices.companyFields.get(companyId);
+                
+                console.log(`🔗 Companies in this field: ${fieldCompanies ? Array.from(fieldCompanies).length : 0}`);
+                console.log(`🔗 Fields for this company: ${companyFields ? Array.from(companyFields).length : 0}`);
+                console.log(`✅ Relationship exists: ${fieldCompanies?.has(companyId) || false}`);
+                
+                if (fieldCompanies) {
+                    console.log(`📋 All companies in ${fieldName}:`);
+                    Array.from(fieldCompanies).forEach(cId => {
+                        const cName = this.dataManager.getCompanyName(cId);
+                        const equity = this.equityCalculator.getCompanyEquity(fieldId, monthKey, cId);
+                        console.log(`   ${cName} (${cId}): ${(equity * 100).toFixed(4)}%`);
+                    });
+                }
+                
+                console.log('\n' + '─'.repeat(60));
+                console.log('CACHE STATUS');
+                console.log('─'.repeat(60));
+                
+                const cacheKey = `${fieldId}|${monthKey}|${companyId}`;
+                const isCached = this.equityCalculator.equityCache.has(cacheKey);
+                console.log(`💾 Equity cached: ${isCached}`);
+                console.log(`📊 Total cache entries: ${this.equityCalculator.equityCache.size}`);
+                
+                console.log('\n' + '='.repeat(80));
+                console.log('DEBUG ANALYSIS COMPLETE');
+                console.log('='.repeat(80));
+            }
+        }
+
+        // ===================================================================
+        // APPLICATION INITIALIZATION
+        // ===================================================================
+
+        // Create global app instance and expose UI manager for onclick handlers
+        window.app = new ProductionAnalysisApp();
+        window.uiManager = window.app.uiManager;
+        window.chartManager = window.app.chartManager;
+        window.debugProduction = (fieldId, companyId, year, month) => {
+            return window.app.debugProduction(fieldId, companyId, year, month);
+        };
     </script>
-
 </body>
 </html>
